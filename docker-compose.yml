@@ -1,8 +1,8 @@
 version: '3.9'
 
 services:
-  fastapi-template:
-    image: defelo/fastapi-template
+  backend:
+    image: bootstrap-academy/backend
     restart: always
     env_file: fastapi.env
     depends_on:

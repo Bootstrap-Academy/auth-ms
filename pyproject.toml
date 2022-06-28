@@ -1,12 +1,11 @@
 [tool.poetry]
-name = "fastapi-template"
+name = "backend"
 version = "0"
 description = ""
-authors = ["Defelo <elodef42@gmail.com>"]
+authors = ["Defelo <defelo@the-morpheus.de>"]
 readme = "README.md"
-license = "GPL-3.0-only"
-homepage = "https://github.com/Defelo/fastapi-template"
-repository = "https://github.com/Defelo/fastapi-template"
+homepage = "https://github.com/Bootstrap-Academy/backend"
+repository = "https://github.com/Bootstrap-Academy/backend"
 
 [tool.poetry.dependencies]
 python = "^3.10"

@@ -21,7 +21,7 @@ RUN python version.py
 
 FROM python:3.10-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/Defelo/fastapi-template"
+LABEL org.opencontainers.image.source="https://github.com/Bootstrap-Academy/backend"
 
 WORKDIR /app
 

@@ -6,7 +6,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.10"
-  IMAGE_NAME: defelo/fastapi-template
+  IMAGE_NAME: bootstrap-academy/backend
 
 jobs:
   codestyle:
@@ -229,7 +229,7 @@ jobs:
 
   docker_push:
     name: Docker Push
-    if: "false" # ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref != 'refs/heads/template' }}
+    if: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref != 'refs/heads/template' }}
     needs: [ codestyle, mypy, linter, tests, docker_build ]
     concurrency: docker
     runs-on: ubuntu-latest
