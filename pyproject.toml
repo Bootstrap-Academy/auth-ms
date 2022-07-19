@@ -29,7 +29,7 @@ flake8 = "^4.0.1"
 isort = "^5.10.1"
 black = "^22.3.0"
 wemake-python-styleguide = "^0.16.1"
-mypy = "^0.961"
+mypy = "^0.971"
 SQLAlchemy = { extras = ["mypy"], version = "^1.4.39" }
 coverage = "^6.4"
 parameterized = "^0.8.1"
