@@ -20,7 +20,7 @@ T = TypeVar("T")
 
 logger = get_logger(__name__)
 
-app = FastAPI(title="FastAPI", version=get_version().description, root_path=ROOT_PATH)
+app = FastAPI(title="Bootstrap Academy Backend", version=get_version().description, root_path=ROOT_PATH)
 for router in ROUTERS:
     app.include_router(router)
 
