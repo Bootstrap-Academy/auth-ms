@@ -35,6 +35,7 @@ RECAPTCHA_SITEKEY: str | None = getenv("RECAPTCHA_SITEKEY", None)
 RECAPTCHA_SECRET: str | None = getenv("RECAPTCHA_SECRET", None)
 
 ADMIN_USERNAME = getenv("ADMIN_USERNAME", "admin")
+ADMIN_EMAIL = getenv("ADMIN_EMAIL", "admin@bootstrap.academy")
 ADMIN_PASSWORD = getenv("ADMIN_PASSWORD", "admin")
 
 OPEN_REGISTRATION: bool = get_bool("OPEN_REGISTRATION", False)

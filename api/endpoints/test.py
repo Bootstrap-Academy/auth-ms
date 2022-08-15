@@ -1,9 +1,10 @@
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-from ..auth import user_auth
+from ..auth import require_verified_email, user_auth
 from ..exceptions.auth import user_responses
+from ..exceptions.user import EmailNotVerifiedError
 from ..schemas.test import TestResponse
 from ..utils import responses
 
@@ -19,3 +20,10 @@ async def test() -> Any:
 @router.get("/auth", dependencies=[user_auth], responses=user_responses(list[int]))
 async def test_auth() -> Any:
     return [1, 2, 3]
+
+
+@router.get(
+    "/verified", dependencies=[require_verified_email], responses=user_responses(TestResponse, EmailNotVerifiedError)
+)
+async def test_verified() -> Any:
+    return {"result": "hello world"}

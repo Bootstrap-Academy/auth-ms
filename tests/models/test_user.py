@@ -10,12 +10,16 @@ from api.models import User
 
 
 @pytest.mark.parametrize(
-    "enabled,admin,password,mfa", [(True, False, "asdf", False), (False, True, None, True), (True, True, None, False)]
+    "enabled,admin,password,mfa,verified",
+    [(True, False, "asdf", False, True), (False, True, None, True, False), (True, True, None, False, True)],
 )
-async def test__serialize(enabled: bool, admin: bool, password: str | None, mfa: bool) -> None:
+async def test__serialize(enabled: bool, admin: bool, password: str | None, mfa: bool, verified: bool) -> None:
     obj = User(
         id="user_id",
         name="user_name",
+        display_name="User Name 42",
+        email="user42@example.com",
+        email_verification_code=None if verified else "asdf-1234",
         registration=datetime.fromtimestamp(123456),
         last_login=datetime.fromtimestamp(345678),
         enabled=enabled,
@@ -27,6 +31,9 @@ async def test__serialize(enabled: bool, admin: bool, password: str | None, mfa:
     assert obj.serialize == {
         "id": "user_id",
         "name": "user_name",
+        "display_name": "User Name 42",
+        "email": "user42@example.com",
+        "email_verified": verified,
         "registration": 123456,
         "last_login": 345678,
         "enabled": enabled,
@@ -42,7 +49,7 @@ async def test__create(enabled: bool, admin: bool, password: str | None, mocker:
     dt = mocker.patch("api.models.user.datetime")
     db = mocker.patch("api.models.user.db", new_callable=AsyncMock)
 
-    obj = await User.create("user_name", password, enabled, admin)
+    obj = await User.create("user_name", "User Name 42", "user42@example.com", password, enabled, admin)
 
     if password:
         hash_password.assert_called_once_with(password)
@@ -50,6 +57,9 @@ async def test__create(enabled: bool, admin: bool, password: str | None, mocker:
     db.add.assert_called_once_with(obj)
 
     assert obj.name == "user_name"
+    assert obj.display_name == "User Name 42"
+    assert obj.email == "user42@example.com"
+    assert obj.email_verified is False
     assert obj.password == (await hash_password() if password else None)
     assert obj.registration == dt.utcnow()
     assert obj.last_login is None
@@ -66,6 +76,7 @@ async def test__filter_by_name() -> None:
 
 async def test__initialize__no_users(mocker: MockerFixture) -> None:
     mocker.patch("api.models.user.ADMIN_USERNAME", "admin_username")
+    mocker.patch("api.models.user.ADMIN_EMAIL", "admin_email")
     mocker.patch("api.models.user.ADMIN_PASSWORD", "admin_password")
     db = mocker.patch("api.models.user.db", new_callable=AsyncMock)
     db.exists.return_value = False
@@ -74,7 +85,7 @@ async def test__initialize__no_users(mocker: MockerFixture) -> None:
     await User.initialize()
 
     db.exists.assert_called_once_with(select(User))
-    create.assert_called_once_with("admin_username", "admin_password", True, True)
+    create.assert_called_once_with("admin_username", "admin_username", "admin_email", "admin_password", True, True)
 
 
 async def test__initialize__with_users(mocker: MockerFixture) -> None:

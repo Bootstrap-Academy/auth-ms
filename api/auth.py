@@ -8,7 +8,7 @@ from sqlalchemy import Column
 
 from .database import db
 from .exceptions.auth import InvalidTokenError, PermissionDeniedError
-from .exceptions.user import UserNotFoundError
+from .exceptions.user import EmailNotVerifiedError, UserNotFoundError
 from .models import Session, User
 
 
@@ -70,6 +70,14 @@ admin_auth = Depends(UserAuth(PermissionLevel.ADMIN))
 @Depends
 async def is_admin(session: Session | None = public_auth) -> bool:
     return session is not None and session.user.admin
+
+
+async def _require_verified_email(session: Session = user_auth) -> None:
+    if not session.user.email_verified:
+        raise EmailNotVerifiedError
+
+
+require_verified_email = Depends(_require_verified_email)
 
 
 def _get_user_dependency(*args: Column[Any]) -> Callable[[str, Session | None], Awaitable[User]]:

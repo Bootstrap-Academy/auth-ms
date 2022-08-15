@@ -12,7 +12,19 @@ class UserNotFoundError(APIException):
 class UserAlreadyExistsError(APIException):
     status_code = status.HTTP_409_CONFLICT
     detail = "User already exists"
-    description = "This user already exists."
+    description = "This user name is already in use."
+
+
+class EmailAlreadyExistsError(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    detail = "Email already exists"
+    description = "This email is already in use."
+
+
+class EmailNotVerifiedError(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = "Email not verified"
+    description = "The email has not been verified."
 
 
 class MFAAlreadyEnabledError(APIException):

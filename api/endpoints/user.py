@@ -3,7 +3,7 @@ from typing import Any
 
 from fastapi import APIRouter, Body, Query, Request
 from pyotp import random_base32
-from sqlalchemy import asc, func
+from sqlalchemy import asc, func, or_
 
 from .. import models
 from ..auth import admin_auth, get_user, is_admin, user_auth
@@ -13,6 +13,7 @@ from ..exceptions.auth import PermissionDeniedError, admin_responses, user_respo
 from ..exceptions.oauth import InvalidOAuthTokenError, RemoteAlreadyLinkedError
 from ..exceptions.user import (
     CannotDeleteLastLoginMethodError,
+    EmailAlreadyExistsError,
     InvalidCodeError,
     MFAAlreadyEnabledError,
     MFANotEnabledError,
@@ -38,6 +39,7 @@ async def get_users(
     limit: int = Query(100, ge=1, le=100),
     offset: int = Query(0, ge=0),
     name: str | None = Query(None, max_length=256),
+    email: str | None = Query(None, max_length=256),
     enabled: bool | None = Query(None),
     admin: bool | None = Query(None),
     mfa_enabled: bool | None = Query(None),
@@ -47,8 +49,16 @@ async def get_users(
     query = select(models.User)
     order = []
     if name:
-        query = query.where(func.lower(models.User.name).contains(name.lower(), autoescape=True))
+        query = query.where(
+            or_(
+                func.lower(models.User.name).contains(name.lower(), autoescape=True),
+                func.lower(models.User.display_name).contains(name.lower(), autoescape=True),
+            )
+        )
         order.append(asc(func.length(models.User.name)))
+    if email:
+        query = query.where(func.lower(models.User.email).contains(email.lower(), autoescape=True))
+        order.append(asc(func.length(models.User.email)))
     if enabled is not None:
         query = query.where(models.User.enabled == enabled)
     if admin is not None:
@@ -104,6 +114,8 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
 
     if await db.exists(models.User.filter_by_name(data.name)):
         raise UserAlreadyExistsError
+    if await db.exists(models.User.filter_by_email(data.email)):
+        raise EmailAlreadyExistsError
 
     if data.oauth_register_token:
         async with redis.pipeline() as pipe:
@@ -122,7 +134,9 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
         ):
             raise RemoteAlreadyLinkedError
 
-    user = await models.User.create(data.name, data.password, data.enabled, data.admin and admin)
+    user = await models.User.create(
+        data.name, data.display_name, data.email, data.password, data.enabled, data.admin and admin
+    )
 
     if data.oauth_register_token:
         await models.OAuthUserConnection.create(user.id, provider_id, remote_user_id, display_name)
@@ -155,6 +169,22 @@ async def update_user(
             raise UserAlreadyExistsError
 
         user.name = data.name
+
+    if data.display_name is not None and data.display_name != user.display_name:
+        user.display_name = data.display_name
+
+    if data.email is not None and data.email != user.email:
+        if await db.exists(models.User.filter_by_email(data.email).where(models.User.id != user.id)):
+            raise EmailAlreadyExistsError
+
+        user.email = data.email
+        user.email_verified = False
+
+    if data.email_verified is not None and data.email_verified != user.email_verified:
+        if not admin:
+            raise PermissionDeniedError
+
+        user.email_verified = data.email_verified
 
     if data.password is not None:
         if not data.password and not user.oauth_connections:

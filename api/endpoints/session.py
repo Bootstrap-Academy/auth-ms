@@ -65,8 +65,7 @@ async def get_sessions(user: models.User = get_user(require_self_or_admin=True))
 async def login(data: Login, request: Request) -> Any:
     """Create a new session"""
 
-    name_hash: str = hashlib.sha256(data.name.lower().encode()).hexdigest()
-    failed_attempts = int(await redis.get(key := f"failed_login_attempts:{name_hash}") or "0")
+    failed_attempts = await models.User.get_failed_logins(data.name_or_email)
     if (
         recaptcha_enabled()
         and (0 <= LOGIN_FAILS_BEFORE_CAPTCHA <= failed_attempts)
@@ -74,16 +73,16 @@ async def login(data: Login, request: Request) -> Any:
     ):
         raise RecaptchaError
 
-    user: models.User | None = await db.first(models.User.filter_by_name(data.name))
+    user: models.User | None = await db.first(models.User.login_filter(data.name_or_email))
     if not user or not await user.check_password(data.password):
-        await redis.incr(key)
+        await user.incr_failed_logins() if user else await models.User.incr_failed_logins_anon(data.name_or_email)
         raise InvalidCredentialsError
 
     if user.mfa_enabled and not await _check_mfa(user, data.mfa_code, data.recovery_code):
-        await redis.incr(key)
+        await user.incr_failed_logins()
         raise InvalidCodeError
 
-    await redis.delete(key)
+    await user.reset_failed_logins()
 
     if not user.enabled:
         raise UserDisabledError

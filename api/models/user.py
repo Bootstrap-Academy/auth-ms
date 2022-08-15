@@ -1,18 +1,19 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, DateTime, String, func
+from sqlalchemy import Boolean, Column, DateTime, String, func, or_
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.sql import Select
 
 from ..database import Base, db, select
-from ..environment import ADMIN_PASSWORD, ADMIN_USERNAME
+from ..environment import ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_USERNAME
 from ..logger import get_logger
 from ..redis import redis
-from ..utils import decode_jwt, hash_password, verify_password
+from ..utils import decode_jwt, generate_verification_code, hash_password, verify_password
 
 
 if TYPE_CHECKING:
@@ -27,6 +28,9 @@ class User(Base):
 
     id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
     name: Mapped[str] = Column(String(32), unique=True)
+    display_name: Mapped[str] = Column(String(64))
+    email: Mapped[str] = Column(String(32), unique=True)
+    email_verification_code: Mapped[str | None] = Column(String(32), nullable=True)
     password: Mapped[str | None] = Column(String(128), nullable=True)
     registration: Mapped[datetime] = Column(DateTime)
     last_login: Mapped[datetime | None] = Column(DateTime, nullable=True)
@@ -41,10 +45,24 @@ class User(Base):
     )
 
     @property
+    def email_verified(self) -> bool:
+        return self.email_verification_code is None
+
+    @email_verified.setter
+    def email_verified(self, value: bool) -> None:
+        if value:
+            self.email_verification_code = None
+        else:
+            self.email_verification_code = generate_verification_code()
+
+    @property
     def serialize(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "name": self.name,
+            "display_name": self.display_name,
+            "email": self.email,
+            "email_verified": self.email_verified,
             "registration": self.registration.timestamp(),
             "last_login": self.last_login.timestamp() if self.last_login else None,
             "enabled": self.enabled,
@@ -54,10 +72,15 @@ class User(Base):
         }
 
     @staticmethod
-    async def create(name: str, password: str | None, enabled: bool, admin: bool) -> User:
+    async def create(
+        name: str, display_name: str, email: str, password: str | None, enabled: bool, admin: bool
+    ) -> User:
         user = User(
             id=str(uuid4()),
             name=name,
+            display_name=display_name,
+            email=email,
+            email_verification_code=generate_verification_code(),
             password=await hash_password(password) if password else None,
             registration=datetime.utcnow(),
             last_login=None,
@@ -75,12 +98,23 @@ class User(Base):
         return select(User).where(func.lower(User.name) == name.lower())
 
     @staticmethod
+    def filter_by_email(email: str) -> Select:
+        return select(User).where(func.lower(User.email) == email.lower())
+
+    @staticmethod
+    def login_filter(name_or_email: str) -> Select:
+        return select(User).where(
+            or_(func.lower(User.name) == name_or_email.lower(), func.lower(User.email) == name_or_email.lower())
+        )
+
+    @staticmethod
     async def initialize() -> None:
         if await db.exists(select(User)):
             return
 
-        await User.create(ADMIN_USERNAME, ADMIN_PASSWORD, True, True)
-        logger.info(f"Admin user '{ADMIN_USERNAME}' has been created!")
+        user = await User.create(ADMIN_USERNAME, ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD, True, True)
+        user.email_verification_code = None
+        logger.info(f"Admin user '{ADMIN_USERNAME}' ({ADMIN_EMAIL}) has been created!")
 
     async def check_password(self, password: str) -> bool:
         if not self.password:
@@ -109,3 +143,28 @@ class User(Base):
     async def logout(self) -> None:
         for session in self.sessions:
             await session.logout()
+
+    @staticmethod
+    async def get_failed_logins(name_or_email: str) -> int:
+        return int(
+            await redis.get(f"failed_login_attempts:{hashlib.sha256(name_or_email.lower().encode()).hexdigest()}")
+            or "0"
+        )
+
+    @staticmethod
+    async def incr_failed_logins_anon(name_or_email: str) -> None:
+        await redis.incr(f"failed_login_attempts:{hashlib.sha256(name_or_email.lower().encode()).hexdigest()}")
+
+    async def incr_failed_logins(self) -> None:
+        async with redis.pipeline() as pipe:
+            for key in [self.name, self.email]:
+                await pipe.incr(f"failed_login_attempts:{hashlib.sha256(key.lower().encode()).hexdigest()}")
+            await pipe.execute()
+
+    async def reset_failed_logins(self) -> None:
+        await redis.delete(
+            *[
+                f"failed_login_attempts:{hashlib.sha256(key.lower().encode()).hexdigest()}"
+                for key in [self.name, self.email]
+            ]
+        )

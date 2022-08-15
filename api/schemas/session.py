@@ -20,7 +20,7 @@ class Session(BaseModel):
 
 
 class Login(BaseModel):
-    name: str
+    name_or_email: str
     password: str
     mfa_code: str | None = ""
     recovery_code: str | None = ""

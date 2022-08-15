@@ -1,4 +1,6 @@
 import hashlib
+import random
+import string
 from asyncio import get_event_loop
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -72,6 +74,12 @@ async def check_mfa_code(code: str, secret: str) -> bool:
 
     await redis.setex(key, 30 * (2 * MFA_VALID_WINDOW + 2), 1)
     return True
+
+
+def generate_verification_code() -> str:
+    return "-".join(
+        "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4)) for _ in range(4)  # noqa: S311
+    )
 
 
 def responses(default: type, *args: Type[APIException]) -> dict[int | str, dict[str, Any]]:
