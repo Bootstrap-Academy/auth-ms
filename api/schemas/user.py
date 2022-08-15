@@ -11,6 +11,7 @@ EMAIL_REGEX = (  # https://emailregex.com/
     r"""-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$"""
 )
 PASSWORD_REGEX = r"^((?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,})?$"  # noqa: S105
+VERIFICATION_CODE_REGEX = r"^([a-zA-Z\d]{4}-){3}[a-zA-Z\d]{4}$"
 MFA_CODE_REGEX = r"^\d{6}$"
 
 

@@ -1,5 +1,5 @@
 import hashlib
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Body, Query, Request
 from pyotp import random_base32
@@ -14,7 +14,9 @@ from ..exceptions.oauth import InvalidOAuthTokenError, RemoteAlreadyLinkedError
 from ..exceptions.user import (
     CannotDeleteLastLoginMethodError,
     EmailAlreadyExistsError,
+    EmailAlreadyVerifiedError,
     InvalidCodeError,
+    InvalidVerificationCodeError,
     MFAAlreadyEnabledError,
     MFANotEnabledError,
     MFANotInitializedError,
@@ -27,7 +29,7 @@ from ..exceptions.user import (
 )
 from ..redis import redis
 from ..schemas.session import LoginResponse
-from ..schemas.user import MFA_CODE_REGEX, CreateUser, UpdateUser, User, UsersResponse
+from ..schemas.user import MFA_CODE_REGEX, VERIFICATION_CODE_REGEX, CreateUser, UpdateUser, User, UsersResponse
 from ..utils import check_mfa_code, check_recaptcha, recaptcha_enabled
 
 
@@ -206,6 +208,37 @@ async def update_user(
 
         user.admin = data.admin
 
+    return user.serialize
+
+
+@router.post("/users/{user_id}/email", responses=admin_responses(bool, UserNotFoundError, EmailAlreadyVerifiedError))
+async def request_verification_email(user: models.User = get_user(require_self_or_admin=True)) -> Any:
+    """Request verification email"""
+
+    if user.email_verified:
+        raise EmailAlreadyVerifiedError
+
+    await user.send_verification_email()
+    return True
+
+
+@router.put(
+    "/users/{user_id}/email",
+    responses=admin_responses(User, UserNotFoundError, EmailAlreadyVerifiedError, InvalidVerificationCodeError),
+)
+async def verify_email(
+    code: str = Body(..., embed=True, regex=VERIFICATION_CODE_REGEX),
+    user: models.User = get_user(require_self_or_admin=True),
+) -> Any:
+    """Verify email"""
+
+    if user.email_verified:
+        raise EmailAlreadyVerifiedError
+
+    if code.lower() != cast(str, user.email_verification_code).lower():
+        raise InvalidVerificationCodeError
+
+    user.email_verified = True
     return user.serialize
 
 

@@ -13,7 +13,7 @@ from ..database import Base, db, select
 from ..environment import ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_USERNAME
 from ..logger import get_logger
 from ..redis import redis
-from ..utils import decode_jwt, generate_verification_code, hash_password, verify_password
+from ..utils import decode_jwt, generate_verification_code, hash_password, send_email, verify_password
 
 
 if TYPE_CHECKING:
@@ -143,6 +143,12 @@ class User(Base):
     async def logout(self) -> None:
         for session in self.sessions:
             await session.logout()
+
+    async def send_verification_email(self) -> None:
+        if not self.email_verification_code:
+            raise ValueError("User already verified")
+
+        await send_email(self.email, "Verify your email", f"Your verification code: {self.email_verification_code}")
 
     @staticmethod
     async def get_failed_logins(name_or_email: str) -> int:

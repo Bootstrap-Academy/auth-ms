@@ -27,6 +27,18 @@ class EmailNotVerifiedError(APIException):
     description = "The email has not been verified."
 
 
+class EmailAlreadyVerifiedError(APIException):
+    status_code = status.HTTP_412_PRECONDITION_FAILED
+    detail = "Email already verified"
+    description = "The email has already been verified."
+
+
+class InvalidVerificationCodeError(APIException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    detail = "Invalid verification code"
+    description = "The verification code is invalid."
+
+
 class MFAAlreadyEnabledError(APIException):
     status_code = status.HTTP_409_CONFLICT
     detail = "MFA already enabled"

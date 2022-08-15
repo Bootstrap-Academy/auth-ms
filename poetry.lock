@@ -60,6 +60,18 @@ python-versions = ">=3.6"
 frozenlist = ">=1.1.0"
 
 [[package]]
+name = "aiosmtplib"
+version = "1.1.6"
+description = "asyncio SMTP client"
+category = "main"
+optional = false
+python-versions = ">=3.5.2,<4.0.0"
+
+[package.extras]
+docs = ["sphinx_autodoc_typehints (>=1.7.0,<2.0.0)", "sphinx (>=2,<4)"]
+uvloop = ["uvloop (>=0.13,<0.15)"]
+
+[[package]]
 name = "aiosqlite"
 version = "0.17.0"
 description = "asyncio bridge to the standard sqlite3 module"
@@ -1127,7 +1139,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "7371408d8896fab5f055c80172c38670c5ed4e9a0369f93921b8befb5b3f858a"
+content-hash = "b1e346ac62e583367c7b6f3db7ca012308ad8ab311535af9543e4a1622dbf9f0"
 
 [metadata.files]
 aiohttp = [
@@ -1216,6 +1228,7 @@ aiosignal = [
     {file = "aiosignal-1.2.0-py3-none-any.whl", hash = "sha256:26e62109036cd181df6e6ad646f91f0dcfd05fe16d0cb924138ff2ab75d64e3a"},
     {file = "aiosignal-1.2.0.tar.gz", hash = "sha256:78ed67db6c7b7ced4f98e495e572106d5c432a93e1ddd1bf475e1dc05f5b7df2"},
 ]
+aiosmtplib = []
 aiosqlite = []
 anyio = [
     {file = "anyio-3.6.1-py3-none-any.whl", hash = "sha256:cb29b9c70620506a9a8f87a309591713446953302d7d995344d0d7c6c0c9a7be"},

@@ -38,6 +38,14 @@ ADMIN_USERNAME = getenv("ADMIN_USERNAME", "admin")
 ADMIN_EMAIL = getenv("ADMIN_EMAIL", "admin@bootstrap.academy")
 ADMIN_PASSWORD = getenv("ADMIN_PASSWORD", "admin")
 
+SMTP_HOST = getenv("SMTP_HOST", "")
+SMTP_PORT = int(getenv("SMTP_PORT", "587"))
+SMTP_USER = getenv("SMTP_USER", "")
+SMTP_PASSWORD = getenv("SMTP_PASSWORD", "")
+SMTP_FROM = getenv("SMTP_FROM", "")
+SMTP_TLS = get_bool("SMTP_TLS", False)
+SMTP_STARTTLS = get_bool("SMTP_STARTTLS", True)
+
 OPEN_REGISTRATION: bool = get_bool("OPEN_REGISTRATION", False)
 OPEN_OAUTH_REGISTRATION: bool = get_bool("OPEN_OAUTH_REGISTRATION", False)
 

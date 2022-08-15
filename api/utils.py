@@ -4,10 +4,12 @@ import string
 from asyncio import get_event_loop
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from email.message import EmailMessage
 from functools import wraps
 from typing import Any, Awaitable, Callable, Type, TypeVar, cast
 
 import aiohttp
+import aiosmtplib
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerificationError
@@ -22,10 +24,20 @@ from .environment import (
     MFA_VALID_WINDOW,
     RECAPTCHA_SECRET,
     RECAPTCHA_SITEKEY,
+    SMTP_FROM,
+    SMTP_HOST,
+    SMTP_PASSWORD,
+    SMTP_PORT,
+    SMTP_STARTTLS,
+    SMTP_TLS,
+    SMTP_USER,
 )
 from .exceptions.api_exception import APIException
+from .logger import get_logger
 from .redis import redis
 
+
+logger = get_logger(__name__)
 
 T = TypeVar("T")
 
@@ -118,3 +130,24 @@ async def check_recaptcha(response: str) -> bool:
             "https://www.google.com/recaptcha/api/siteverify", data={"secret": RECAPTCHA_SECRET, "response": response}
         ) as resp:
             return cast(bool, (await resp.json())["success"])
+
+
+async def send_email(recipient: str, title: str, body: str, content_type: str = "text/plain") -> None:
+    logger.debug(f"Sending email to {recipient} ({title})")
+
+    message = EmailMessage()
+    message["From"] = SMTP_FROM
+    message["To"] = recipient
+    message["Subject"] = title
+    message.set_type(content_type)
+    message.set_content(body)
+
+    await aiosmtplib.send(
+        message,
+        hostname=SMTP_HOST,
+        port=SMTP_PORT,
+        username=SMTP_USER,
+        password=SMTP_PASSWORD,
+        use_tls=SMTP_TLS,
+        start_tls=SMTP_STARTTLS,
+    )
