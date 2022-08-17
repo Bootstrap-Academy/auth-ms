@@ -1,3 +1,5 @@
+"""OAuth related endpoints"""
+
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
