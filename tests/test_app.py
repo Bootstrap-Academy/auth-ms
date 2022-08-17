@@ -37,7 +37,9 @@ async def test__setup_app__sentry(mocker: MockerFixture) -> None:
     app.setup_app()
 
     get_version_mock.assert_called_once_with()
-    setup_sentry_mock.assert_called_once_with(app_mock, sentry_dsn_mock, "FastAPI", get_version_mock().description)
+    setup_sentry_mock.assert_called_once_with(
+        app_mock, sentry_dsn_mock, "Bootstrap Academy Backend", get_version_mock().description
+    )
 
 
 async def test__setup_app__debug(mocker: MockerFixture) -> None:

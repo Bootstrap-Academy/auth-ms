@@ -1,3 +1,5 @@
+"""Endpoints for user management"""
+
 import hashlib
 from typing import Any, cast
 
@@ -38,15 +40,19 @@ router = APIRouter(tags=["users"])
 
 @router.get("/users", dependencies=[admin_auth], responses=admin_responses(UsersResponse))
 async def get_users(
-    limit: int = Query(100, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    name: str | None = Query(None, max_length=256),
-    email: str | None = Query(None, max_length=256),
-    enabled: bool | None = Query(None),
-    admin: bool | None = Query(None),
-    mfa_enabled: bool | None = Query(None),
+    limit: int = Query(100, ge=1, le=100, description="The maximum number of users to return"),
+    offset: int = Query(0, ge=0, description="The number of users to skip for pagination"),
+    name: str | None = Query(None, max_length=256, description="A search term to match against the user's name"),
+    email: str | None = Query(None, max_length=256, description="A search term to match against the user's email"),
+    enabled: bool | None = Query(None, description="Return only users with the given enabled status"),
+    admin: bool | None = Query(None, description="Return only users with the given admin status"),
+    mfa_enabled: bool | None = Query(None, description="Return only users with the given MFA status"),
 ) -> Any:
-    """Get all users"""
+    """
+    Return a list of all users matching the given criteria.
+
+    *Requirements:* **ADMIN**
+    """
 
     query = select(models.User)
     order = []
@@ -82,7 +88,11 @@ async def get_users(
 
 @router.get("/users/{user_id}", responses=admin_responses(User, UserNotFoundError))
 async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True)) -> Any:
-    """Get user by id"""
+    """
+    Return a user by ID.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     return user.serialize
 
@@ -101,7 +111,15 @@ async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True
     ),
 )
 async def create_user(data: CreateUser, request: Request, admin: bool = is_admin) -> Any:
-    """Create a new user"""
+    """
+    Create a new user and a new session for them.
+
+    If the **ADMIN** requirement is *not* met:
+    - The user is always created as a regular user (`"enabled": true, "admin": false`).
+    - A recaptcha response is required if recaptcha is enabled (see `GET /recaptcha`).
+
+    The value of the `User-agent` header is used as the device name of the created session.
+    """
 
     if not data.oauth_register_token and not data.password:
         raise NoLoginMethodError
@@ -137,7 +155,7 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
             raise RemoteAlreadyLinkedError
 
     user = await models.User.create(
-        data.name, data.display_name, data.email, data.password, data.enabled, data.admin and admin
+        data.name, data.display_name, data.email, data.password, data.enabled or not admin, data.admin and admin
     )
 
     if data.oauth_register_token:
@@ -162,7 +180,23 @@ async def update_user(
     admin: bool = is_admin,
     session: models.Session = user_auth,
 ) -> Any:
-    """Update a user"""
+    """
+    Update an existing user.
+
+    - Changing the email address will also set it to unverified.
+    - Setting `password` to `null` or omitting it will not change the user's password while setting it to
+      the empty string will remove the user's password.
+    - Disabling a user will also log them out.
+    - A user can never change their own admin status.
+
+    *Requirements:* **SELF** or **ADMIN**
+
+    If the **ADMIN** requirement is *not* met:
+    - The username cannot be changed.
+    - The user cannot be enabled or disabled.
+    - The email verification status cannot be changed.
+    - The admin status cannot be changed.
+    """
 
     if data.name is not None and data.name != user.name:
         if not admin:
@@ -213,7 +247,14 @@ async def update_user(
 
 @router.post("/users/{user_id}/email", responses=admin_responses(bool, UserNotFoundError, EmailAlreadyVerifiedError))
 async def request_verification_email(user: models.User = get_user(require_self_or_admin=True)) -> Any:
-    """Request verification email"""
+    """
+    Request a verification email.
+
+    This will send an email to the user's email address with a code for the `PUT /users/{user_id}/email` endpoint to
+    verify their email address.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     if user.email_verified:
         raise EmailAlreadyVerifiedError
@@ -227,10 +268,16 @@ async def request_verification_email(user: models.User = get_user(require_self_o
     responses=admin_responses(User, UserNotFoundError, EmailAlreadyVerifiedError, InvalidVerificationCodeError),
 )
 async def verify_email(
-    code: str = Body(..., embed=True, regex=VERIFICATION_CODE_REGEX),
+    code: str = Body(embed=True, regex=VERIFICATION_CODE_REGEX, description="The code from the verification email"),
     user: models.User = get_user(require_self_or_admin=True),
 ) -> Any:
-    """Verify email"""
+    """
+    Verify a user's email address.
+
+    To request a verification email, use the `POST /users/{user_id}/email` endpoint.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     if user.email_verified:
         raise EmailAlreadyVerifiedError
@@ -244,7 +291,14 @@ async def verify_email(
 
 @router.post("/users/{user_id}/mfa", responses=admin_responses(str, UserNotFoundError, MFAAlreadyEnabledError))
 async def initialize_mfa(user: models.User = get_user(require_self_or_admin=True)) -> Any:
-    """Generate mfa secret"""
+    """
+    Initialize MFA for a user by generating a new TOTP secret.
+
+    The TOTP secret generated by this endpoint should be used to configure the user's MFA app. After that the
+    `PUT /users/{user_id}/mfa` endpoint can be used to enable MFA.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     if user.mfa_enabled:
         raise MFAAlreadyEnabledError
@@ -258,9 +312,20 @@ async def initialize_mfa(user: models.User = get_user(require_self_or_admin=True
     responses=admin_responses(str, UserNotFoundError, MFAAlreadyEnabledError, MFANotInitializedError, InvalidCodeError),
 )
 async def enable_mfa(
-    code: str = Body(..., embed=True, regex=MFA_CODE_REGEX), user: models.User = get_user(require_self_or_admin=True)
+    code: str = Body(embed=True, regex=MFA_CODE_REGEX, description="The 6-digit code generated by the user's MFA app"),
+    user: models.User = get_user(require_self_or_admin=True),
 ) -> Any:
-    """Enable mfa and generate recovery code"""
+    """
+    Enable MFA for a user and generate the recovery code.
+
+    This endpoint should be used after initializing MFA (see `POST /users/{user_id}/mfa`) to actually enable it
+    on the account.
+
+    The recovery code generated by this endpoint can be used to login if the user has lost their MFA app and should
+    therefore be kept in a safe place.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     if user.mfa_enabled:
         raise MFAAlreadyEnabledError
@@ -278,7 +343,11 @@ async def enable_mfa(
 
 @router.delete("/users/{user_id}/mfa", responses=admin_responses(bool, UserNotFoundError, MFANotEnabledError))
 async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)) -> Any:
-    """Disable mfa"""
+    """
+    Disable MFA for a user.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     if not user.mfa_secret and not user.mfa_enabled:
         raise MFANotEnabledError
@@ -293,7 +362,13 @@ async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)) 
 async def delete_user(
     user: models.User = get_user(models.User.sessions, require_self_or_admin=True), admin: bool = is_admin
 ) -> Any:
-    """Delete a user"""
+    """
+    Delete a user.
+
+    If only one admin exists, this user cannot be deleted.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     if not (OPEN_REGISTRATION or OPEN_OAUTH_REGISTRATION) and not admin:
         raise PermissionDeniedError

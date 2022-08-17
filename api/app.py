@@ -1,5 +1,30 @@
+"""
+## Authentication
+- To authenticate requests, the `Authorization` header must contain a valid access token (JWT which contains the user's
+  ID and the session ID).
+- The access token can be obtained by logging in to an exising account (see `POST /sessions` and `POST /sessions/oauth`)
+  or by creating an account (see `POST /users`). This access token is only valid for a short period of time
+  (usually 5 minutes).
+- If the access token is expired, a new access token can be obtained by using the refresh token (see `PUT /session`)
+  which is also returned when creating a session. This will also invalidate the refresh token and generate a new one.
+- If the refresh token is not used to refresh the session within a configured period of time (usually 30 days) the
+  session expires and the user must log in again on this device.
+
+## Special parameters
+- In addition to the usual user ids the `user_id` path parameter used in most endpoints also accepts the special values
+  `me` and `self` which refer to the currently authenticated user.
+
+## Requirements
+Some endpoints require one or more of the following conditions to be met:
+- **USER**: The user is authenticated and has a valid session.
+- **VERIFIED**: The email of the authenticated user is verified.
+- **SELF**: The authenticated user must be the same as the affected user. Requires **USER**.
+- **ADMIN**: The authenticated user must be an admin. Requires **USER**.
+"""
+
+
 import asyncio
-from typing import Awaitable, Callable, TypeVar
+from typing import Any, Awaitable, Callable, TypeVar
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exception_handlers import http_exception_handler
@@ -13,6 +38,7 @@ from .environment import DEBUG, ROOT_PATH, SENTRY_DSN
 from .logger import get_logger, setup_sentry
 from .models import User
 from .models.session import clean_expired_sessions
+from .utils import add_endpoint_links_to_openapi_docs
 from .version import get_version
 
 
@@ -20,15 +46,25 @@ T = TypeVar("T")
 
 logger = get_logger(__name__)
 
-app = FastAPI(title="Bootstrap Academy Backend", version=get_version().description, root_path=ROOT_PATH)
-for router in ROUTERS:
+tags: list[Any] = []
+app = FastAPI(
+    title="Bootstrap Academy Backend",
+    description=__doc__,
+    version=get_version().description,
+    root_path=ROOT_PATH,
+    openapi_tags=tags,
+)
+for name, (router, description) in ROUTERS.items():
     app.include_router(router)
+    tags.append({"name": name, "description": description})
 
 
 def setup_app() -> None:
+    add_endpoint_links_to_openapi_docs(app.openapi())
+
     if SENTRY_DSN:
         logger.debug("initializing sentry")
-        setup_sentry(app, SENTRY_DSN, "FastAPI", get_version().description)
+        setup_sentry(app, SENTRY_DSN, "Bootstrap Academy Backend", get_version().description)
 
     if DEBUG:
         app.add_middleware(
@@ -73,6 +109,6 @@ async def on_shutdown() -> None:
     pass
 
 
-@app.head("/status", tags=["status"])
+@app.head("/status", include_in_schema=False)
 async def status() -> None:
     pass

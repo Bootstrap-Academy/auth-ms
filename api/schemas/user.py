@@ -16,17 +16,17 @@ MFA_CODE_REGEX = r"^\d{6}$"
 
 
 class User(BaseModel):
-    id: str
-    name: str
-    display_name: str
-    email: str
-    email_verified: bool
-    registration: float
-    last_login: float | None
-    enabled: bool
-    admin: bool
-    password: bool
-    mfa_enabled: bool
+    id: str = Field(description="Unique identifier for the user")
+    name: str = Field(description="Unique username")
+    display_name: str = Field(description="Full name of the user")
+    email: str = Field(description="Email address of the user")
+    email_verified: bool = Field(description="Whether the user has verified their email address")
+    registration: float = Field(description="Timestamp of the user's registration")
+    last_login: float | None = Field(description="Timestamp of the user's last successful login")
+    enabled: bool = Field(description="Whether the user is enabled")
+    admin: bool = Field(description="Whether the user is an administrator")
+    password: bool = Field(description="Whether the user has a password (if not, login is only possible via OAuth)")
+    mfa_enabled: bool = Field(description="Whether the user has enabled MFA")
 
     Config = example(
         id="a13e63b1-9830-4604-8b7f-397d2c29955e",
@@ -44,28 +44,30 @@ class User(BaseModel):
 
 
 class UsersResponse(BaseModel):
-    total: int
-    users: list[User]
+    total: int = Field(description="Total number of users matching the query")
+    users: list[User] = Field(description="Paginated list of users matching the query")
 
     Config = example(total=1, users=[get_example(User)])
 
 
 class CreateUser(BaseModel):
-    name: str = Field(..., regex=USERNAME_REGEX)
-    display_name: str = Field(..., min_length=4, max_length=64)
-    email: str = Field(..., regex=EMAIL_REGEX, max_length=32)
-    password: str | None = Field(None, regex=PASSWORD_REGEX)
-    oauth_register_token: str | None
-    recaptcha_response: str | None
-    enabled: bool = True
-    admin: bool = False
+    name: str = Field(regex=USERNAME_REGEX, description="Unique username")
+    display_name: str = Field(..., min_length=4, max_length=64, description="Full name of the user")
+    email: str = Field(..., regex=EMAIL_REGEX, max_length=32, description="Email address of the user")
+    password: str | None = Field(regex=PASSWORD_REGEX, description="Password of the user")
+    oauth_register_token: str | None = Field(description="OAuth registration token returned by `POST /sessions/oauth`")
+    recaptcha_response: str | None = Field(description="Recaptcha response (required if not requested by an admin)")
+    enabled: bool = Field(True, description="Whether the user is enabled")
+    admin: bool = Field(False, description="Whether the user is an administrator")
 
 
 class UpdateUser(BaseModel):
-    name: str | None = Field(None, regex=USERNAME_REGEX)
-    display_name: str | None = Field(None, min_length=4, max_length=64)
-    email: str | None = Field(None, regex=EMAIL_REGEX, max_length=32)
-    email_verified: bool | None
-    password: str | None = Field(None, regex=PASSWORD_REGEX)
-    enabled: bool | None
-    admin: bool | None
+    name: str | None = Field(regex=USERNAME_REGEX, description="Change the username")
+    display_name: str | None = Field(None, min_length=4, max_length=64, description="Change the user's full name")
+    email: str | None = Field(None, regex=EMAIL_REGEX, max_length=32, description="Change the user's email address")
+    email_verified: bool | None = Field(None, description="Change whether the user's email address is verified")
+    password: str | None = Field(
+        regex=PASSWORD_REGEX, description="Change the password (if set to `null`, the password is removed)"
+    )
+    enabled: bool | None = Field(description="Change whether the user is enabled")
+    admin: bool | None = Field(description="Change whether the user is an administrator")
