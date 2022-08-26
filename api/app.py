@@ -52,6 +52,7 @@ app = FastAPI(
     description=__doc__,
     version=get_version().description,
     root_path=ROOT_PATH,
+    servers=[{"url": ROOT_PATH}] if ROOT_PATH else None,
     openapi_tags=tags,
 )
 for name, (router, description) in ROUTERS.items():
