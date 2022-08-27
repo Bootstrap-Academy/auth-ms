@@ -45,6 +45,12 @@ class InvalidVerificationCodeError(APIException):
     description = "The verification code is invalid."
 
 
+class PasswordResetFailedError(APIException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    detail = "Password reset failed"
+    description = "The email or password reset code is invalid or the reset code has expired."
+
+
 class MFAAlreadyEnabledError(APIException):
     status_code = status.HTTP_409_CONFLICT
     detail = "MFA already enabled"

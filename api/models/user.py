@@ -159,6 +159,18 @@ class User(Base):
 
         await send_email(self.email, "Verify your email", f"Your verification code: {self.email_verification_code}")
 
+    async def send_password_reset_email(self) -> None:
+        code = generate_verification_code()
+        await redis.setex(f"password_reset:{self.id}", 3600, code)
+        await send_email(self.email, "Reset your password", f"Your password reset code: {code}")
+
+    async def check_password_reset_code(self, code: str) -> bool:
+        if code != await redis.get(key := f"password_reset:{self.id}"):
+            return False
+
+        await redis.delete(key)
+        return True
+
     @staticmethod
     async def get_failed_logins(name_or_email: str) -> int:
         return int(

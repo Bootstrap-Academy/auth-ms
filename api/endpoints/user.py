@@ -26,6 +26,7 @@ from ..exceptions.user import (
     MFANotInitializedError,
     NoLoginMethodError,
     OAuthRegistrationDisabledError,
+    PasswordResetFailedError,
     RecaptchaError,
     RegistrationDisabledError,
     UserAlreadyExistsError,
@@ -37,6 +38,7 @@ from ..schemas.user import (
     MFA_CODE_REGEX,
     VERIFICATION_CODE_REGEX,
     CreateUser,
+    ResetPassword,
     UpdateUser,
     User,
     UsersResponse,
@@ -407,3 +409,44 @@ async def delete_user(
     await user.logout()
     await db.delete(user)
     return True
+
+
+@router.post("/password_reset", responses=responses(bool, InvalidEmailError))
+async def request_password_reset(
+    email: EmailStr = Body(embed=True, description="The email address of the user to reset the password for")
+) -> Any:
+    """
+    Request a password reset email.
+
+    This will send an email to the user's email address with a code for the `PUT /password_reset` endpoint to
+    reset their password. This code expires after one hour.
+    """
+
+    if user := await db.first(models.User.filter_by_email(email)):
+        try:
+            await user.send_password_reset_email()
+        except ValueError:
+            raise InvalidEmailError
+
+    return True
+
+
+@router.put("/password_reset", responses=responses(User, PasswordResetFailedError))
+async def reset_password(data: ResetPassword) -> Any:
+    """
+    Reset a user's password.
+
+    To request a password reset email, use the `POST /password_reset` endpoint.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
+
+    user: models.User | None = await db.first(models.User.filter_by_email(data.email))
+    if not user:
+        raise PasswordResetFailedError
+
+    if not await user.check_password_reset_code(data.code):
+        raise PasswordResetFailedError
+
+    await user.change_password(data.password)
+    return user.serialize

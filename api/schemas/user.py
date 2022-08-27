@@ -65,3 +65,9 @@ class UpdateUser(BaseModel):
     )
     enabled: bool | None = Field(description="Change whether the user is enabled")
     admin: bool | None = Field(description="Change whether the user is an administrator")
+
+
+class ResetPassword(BaseModel):
+    email: EmailStr = Field(description="Email address of the user")
+    code: str = Field(regex=VERIFICATION_CODE_REGEX, description="Password reset code")
+    password: str = Field(regex=PASSWORD_REGEX, description="New password for the user")
