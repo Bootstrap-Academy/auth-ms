@@ -48,7 +48,7 @@ logger = get_logger(__name__)
 
 tags: list[Any] = []
 app = FastAPI(
-    title="Bootstrap Academy Backend",
+    title="Bootstrap Academy Backend: Auth Microservice",
     description=__doc__,
     version=get_version().description,
     root_path=ROOT_PATH,
