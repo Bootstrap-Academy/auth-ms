@@ -4,7 +4,6 @@ import hashlib
 from typing import Any, cast
 
 from fastapi import APIRouter, Body, Query, Request
-from pydantic import EmailStr
 from pyotp import random_base32
 from sqlalchemy import asc, func, or_
 

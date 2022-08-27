@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import random
 import string
@@ -181,12 +182,14 @@ async def send_email(recipient: str, title: str, body: str, content_type: str = 
     message.set_type(content_type)
     message.set_content(body)
 
-    await aiosmtplib.send(
-        message,
-        hostname=SMTP_HOST,
-        port=SMTP_PORT,
-        username=SMTP_USER,
-        password=SMTP_PASSWORD,
-        use_tls=SMTP_TLS,
-        start_tls=SMTP_STARTTLS,
+    asyncio.create_task(
+        aiosmtplib.send(
+            message,
+            hostname=SMTP_HOST,
+            port=SMTP_PORT,
+            username=SMTP_USER,
+            password=SMTP_PASSWORD,
+            use_tls=SMTP_TLS,
+            start_tls=SMTP_STARTTLS,
+        )
     )
