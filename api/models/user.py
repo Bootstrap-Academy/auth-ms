@@ -13,7 +13,14 @@ from ..database import Base, db, select
 from ..environment import ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_USERNAME
 from ..logger import get_logger
 from ..redis import redis
-from ..utils import decode_jwt, generate_verification_code, hash_password, send_email, verify_password
+from ..utils import (
+    check_email_deliverability,
+    decode_jwt,
+    generate_verification_code,
+    hash_password,
+    send_email,
+    verify_password,
+)
 
 
 if TYPE_CHECKING:
@@ -29,7 +36,7 @@ class User(Base):
     id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
     name: Mapped[str] = Column(String(32), unique=True)
     display_name: Mapped[str] = Column(String(64))
-    email: Mapped[str] = Column(String(32), unique=True)
+    email: Mapped[str] = Column(String(254), unique=True)
     email_verification_code: Mapped[str | None] = Column(String(32), nullable=True)
     password: Mapped[str | None] = Column(String(128), nullable=True)
     registration: Mapped[datetime] = Column(DateTime)
@@ -115,6 +122,8 @@ class User(Base):
         user = await User.create(ADMIN_USERNAME, ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD, True, True)
         user.email_verification_code = None
         logger.info(f"Admin user '{ADMIN_USERNAME}' ({ADMIN_EMAIL}) has been created!")
+        if not await check_email_deliverability(user.email):
+            logger.warning(f"Cannot send emails to '{user.email}'!")
 
     async def check_password(self, password: str) -> bool:
         if not self.password:

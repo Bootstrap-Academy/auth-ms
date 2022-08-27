@@ -21,6 +21,12 @@ class EmailAlreadyExistsError(APIException):
     description = "This email is already in use."
 
 
+class InvalidEmailError(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    detail = "Invalid email"
+    description = "This email is invalid."
+
+
 class EmailNotVerifiedError(APIException):
     status_code = status.HTTP_403_FORBIDDEN
     detail = "Email not verified"

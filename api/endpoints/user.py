@@ -4,6 +4,7 @@ import hashlib
 from typing import Any, cast
 
 from fastapi import APIRouter, Body, Query, Request
+from pydantic import EmailStr
 from pyotp import random_base32
 from sqlalchemy import asc, func, or_
 
@@ -18,6 +19,7 @@ from ..exceptions.user import (
     EmailAlreadyExistsError,
     EmailAlreadyVerifiedError,
     InvalidCodeError,
+    InvalidEmailError,
     InvalidVerificationCodeError,
     MFAAlreadyEnabledError,
     MFANotEnabledError,
@@ -31,8 +33,15 @@ from ..exceptions.user import (
 )
 from ..redis import redis
 from ..schemas.session import LoginResponse
-from ..schemas.user import MFA_CODE_REGEX, VERIFICATION_CODE_REGEX, CreateUser, UpdateUser, User, UsersResponse
-from ..utils import check_mfa_code, check_recaptcha, recaptcha_enabled
+from ..schemas.user import (
+    MFA_CODE_REGEX,
+    VERIFICATION_CODE_REGEX,
+    CreateUser,
+    UpdateUser,
+    User,
+    UsersResponse,
+)
+from ..utils import check_email_deliverability, check_mfa_code, check_recaptcha, recaptcha_enabled, responses
 
 
 router = APIRouter(tags=["users"])
@@ -108,6 +117,7 @@ async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True
         OAuthRegistrationDisabledError,
         RecaptchaError,
         InvalidOAuthTokenError,
+        InvalidEmailError,
     ),
 )
 async def create_user(data: CreateUser, request: Request, admin: bool = is_admin) -> Any:
@@ -131,6 +141,9 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
 
         if recaptcha_enabled() and not (data.recaptcha_response and await check_recaptcha(data.recaptcha_response)):
             raise RecaptchaError
+
+        if not await check_email_deliverability(data.email):
+            raise InvalidEmailError
 
     if await db.exists(models.User.filter_by_name(data.name)):
         raise UserAlreadyExistsError
@@ -172,7 +185,14 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
 
 @router.patch(
     "/users/{user_id}",
-    responses=admin_responses(User, UserNotFoundError, UserAlreadyExistsError, CannotDeleteLastLoginMethodError),
+    responses=admin_responses(
+        User,
+        UserNotFoundError,
+        UserAlreadyExistsError,
+        EmailAlreadyExistsError,
+        InvalidEmailError,
+        CannotDeleteLastLoginMethodError,
+    ),
 )
 async def update_user(
     data: UpdateUser,
@@ -212,6 +232,8 @@ async def update_user(
     if data.email is not None and data.email != user.email:
         if await db.exists(models.User.filter_by_email(data.email).where(models.User.id != user.id)):
             raise EmailAlreadyExistsError
+        if not admin and not await check_email_deliverability(data.email):
+            raise InvalidEmailError
 
         user.email = data.email
         user.email_verified = False
@@ -245,7 +267,10 @@ async def update_user(
     return user.serialize
 
 
-@router.post("/users/{user_id}/email", responses=admin_responses(bool, UserNotFoundError, EmailAlreadyVerifiedError))
+@router.post(
+    "/users/{user_id}/email",
+    responses=admin_responses(bool, UserNotFoundError, EmailAlreadyVerifiedError, InvalidEmailError),
+)
 async def request_verification_email(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """
     Request a verification email.
@@ -259,7 +284,10 @@ async def request_verification_email(user: models.User = get_user(require_self_o
     if user.email_verified:
         raise EmailAlreadyVerifiedError
 
-    await user.send_verification_email()
+    try:
+        await user.send_verification_email()
+    except ValueError:
+        raise InvalidEmailError
     return True
 
 

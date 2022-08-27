@@ -80,12 +80,15 @@ async def test__initialize__no_users(mocker: MockerFixture) -> None:
     mocker.patch("api.models.user.ADMIN_PASSWORD", "admin_password")
     db = mocker.patch("api.models.user.db", new_callable=AsyncMock)
     db.exists.return_value = False
-    create = mocker.patch("api.models.user.User.create", new_callable=AsyncMock)
+    create = mocker.patch("api.models.user.User.create", AsyncMock(return_value=(user := AsyncMock())))
+    user.email = "admin_email"
+    check_email_deliverability = mocker.patch("api.models.user.check_email_deliverability", new_callable=AsyncMock)
 
     await User.initialize()
 
     db.exists.assert_called_once_with(select(User))
     create.assert_called_once_with("admin_username", "admin_username", "admin_email", "admin_password", True, True)
+    check_email_deliverability.assert_called_once_with("admin_email")
 
 
 async def test__initialize__with_users(mocker: MockerFixture) -> None:

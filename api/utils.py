@@ -10,6 +10,7 @@ from typing import Any, Awaitable, Callable, Type, TypeVar, cast
 
 import aiohttp
 import aiosmtplib
+import email_validator
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerificationError
@@ -158,7 +159,19 @@ async def check_recaptcha(response: str) -> bool:
             return cast(bool, (await resp.json())["success"])
 
 
+@run_in_thread
+def check_email_deliverability(email: str) -> bool:
+    try:
+        email_validator.validate_email(email)
+    except email_validator.EmailNotValidError:
+        return False
+    return True
+
+
 async def send_email(recipient: str, title: str, body: str, content_type: str = "text/plain") -> None:
+    if not await check_email_deliverability(recipient):
+        raise ValueError("Invalid email address")
+
     logger.debug(f"Sending email to {recipient} ({title})")
 
     message = EmailMessage()

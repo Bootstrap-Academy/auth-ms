@@ -1,15 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from ..utils import example, get_example
 
 
 USERNAME_REGEX = r"^[a-zA-Z\d]{4,32}$"
-EMAIL_REGEX = (  # https://emailregex.com/
-    r"""^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-"""
-    r"""\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-"""
-    r"""9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a"""
-    r"""-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$"""
-)
 PASSWORD_REGEX = r"^((?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,})?$"  # noqa: S105
 VERIFICATION_CODE_REGEX = r"^([a-zA-Z\d]{4}-){3}[a-zA-Z\d]{4}$"
 MFA_CODE_REGEX = r"^\d{6}$"
@@ -53,7 +47,7 @@ class UsersResponse(BaseModel):
 class CreateUser(BaseModel):
     name: str = Field(regex=USERNAME_REGEX, description="Unique username")
     display_name: str = Field(..., min_length=4, max_length=64, description="Full name of the user")
-    email: str = Field(..., regex=EMAIL_REGEX, max_length=32, description="Email address of the user")
+    email: EmailStr = Field(..., description="Email address of the user")
     password: str | None = Field(regex=PASSWORD_REGEX, description="Password of the user")
     oauth_register_token: str | None = Field(description="OAuth registration token returned by `POST /sessions/oauth`")
     recaptcha_response: str | None = Field(description="Recaptcha response (required if not requested by an admin)")
@@ -64,7 +58,7 @@ class CreateUser(BaseModel):
 class UpdateUser(BaseModel):
     name: str | None = Field(regex=USERNAME_REGEX, description="Change the username")
     display_name: str | None = Field(None, min_length=4, max_length=64, description="Change the user's full name")
-    email: str | None = Field(None, regex=EMAIL_REGEX, max_length=32, description="Change the user's email address")
+    email: EmailStr | None = Field(None, description="Change the user's email address")
     email_verified: bool | None = Field(None, description="Change whether the user's email address is verified")
     password: str | None = Field(
         regex=PASSWORD_REGEX, description="Change the password (if set to `null`, the password is removed)"
