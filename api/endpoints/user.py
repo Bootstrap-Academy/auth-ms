@@ -37,6 +37,7 @@ from ..schemas.user import (
     MFA_CODE_REGEX,
     VERIFICATION_CODE_REGEX,
     CreateUser,
+    RequestPasswordReset,
     ResetPassword,
     UpdateUser,
     User,
@@ -410,10 +411,8 @@ async def delete_user(
     return True
 
 
-@router.post("/password_reset", responses=responses(bool, InvalidEmailError))
-async def request_password_reset(
-    email: EmailStr = Body(embed=True, description="The email address of the user to reset the password for")
-) -> Any:
+@router.post("/password_reset", responses=responses(bool, RecaptchaError, InvalidEmailError))
+async def request_password_reset(data: RequestPasswordReset) -> Any:
     """
     Request a password reset email.
 
@@ -421,7 +420,10 @@ async def request_password_reset(
     reset their password. This code expires after one hour.
     """
 
-    if user := await db.first(models.User.filter_by_email(email)):
+    if recaptcha_enabled() and not (data.recaptcha_response and await check_recaptcha(data.recaptcha_response)):
+        raise RecaptchaError
+
+    if user := await db.first(models.User.filter_by_email(data.email)):
         try:
             await user.send_password_reset_email()
         except ValueError:

@@ -67,6 +67,11 @@ class UpdateUser(BaseModel):
     admin: bool | None = Field(description="Change whether the user is an administrator")
 
 
+class RequestPasswordReset(BaseModel):
+    email: EmailStr = Field(description="The email address of the user to reset the password for")
+    recaptcha_response: str | None = Field(description="Recaptcha response (required if enabled)")
+
+
 class ResetPassword(BaseModel):
     email: EmailStr = Field(description="Email address of the user")
     code: str = Field(regex=VERIFICATION_CODE_REGEX, description="Password reset code")
