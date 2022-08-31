@@ -1,13 +1,13 @@
 <p>
 
-  [![CI](https://github.com/Bootstrap-Academy/backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Bootstrap-Academy/backend/actions/workflows/ci.yml)
+  [![CI](https://github.com/Bootstrap-Academy/auth-ms/actions/workflows/ci.yml/badge.svg)](https://github.com/Bootstrap-Academy/auth-ms/actions/workflows/ci.yml)
   [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 </p>
 
-# backend
+# auth-ms
 
-Bootstrap Academy backend
+Bootstrap Academy Auth Microservice
 
 ## Development
 
@@ -22,12 +22,12 @@ Bootstrap Academy backend
 
 #### SSH (recommended)
 ```bash
-git clone --recursive git@github.com:Defelo/fastapi-template.git
+git clone --recursive git@github.com:Bootstrap-Academy/auth-ms.git
 ```
 
 #### HTTPS
 ```bash
-git clone --recursive https://github.com/Defelo/fastapi-template.git
+git clone --recursive https://github.com/Bootstrap-Academy/auth-ms.git
 ```
 
 ### Setup development environment

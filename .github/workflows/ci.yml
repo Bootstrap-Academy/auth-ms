@@ -6,7 +6,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.10"
-  IMAGE_NAME: bootstrap-academy/backend
+  IMAGE_NAME: bootstrap-academy/auth-ms
 
 jobs:
   codestyle:
