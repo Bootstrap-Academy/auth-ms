@@ -38,7 +38,8 @@ from .environment import DEBUG, ROOT_PATH, SENTRY_DSN
 from .logger import get_logger, setup_sentry
 from .models import User
 from .models.session import clean_expired_sessions
-from .utils import add_endpoint_links_to_openapi_docs
+from .utils.debug import check_responses
+from .utils.docs import add_endpoint_links_to_openapi_docs
 from .version import get_version
 
 
@@ -52,12 +53,16 @@ app = FastAPI(
     description=__doc__,
     version=get_version().description,
     root_path=ROOT_PATH,
+    root_path_in_servers=False,
     servers=[{"url": ROOT_PATH}] if ROOT_PATH else None,
     openapi_tags=tags,
 )
 for name, (router, description) in ROUTERS.items():
     app.include_router(router)
     tags.append({"name": name, "description": description})
+
+if DEBUG:
+    app.middleware("http")(check_responses)
 
 
 def setup_app() -> None:
@@ -98,7 +103,6 @@ async def clean_expired_sessions_loop() -> None:
 async def on_startup() -> None:
     setup_app()
 
-    await db.create_tables()
     asyncio.create_task(clean_expired_sessions_loop())
 
     async with db_context():

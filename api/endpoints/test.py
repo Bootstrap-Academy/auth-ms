@@ -8,7 +8,7 @@ from ..auth import require_verified_email, user_auth
 from ..exceptions.auth import user_responses
 from ..exceptions.user import EmailNotVerifiedError
 from ..schemas.test import TestResponse
-from ..utils import responses
+from ..utils.docs import responses
 
 
 router = APIRouter(tags=["test"])

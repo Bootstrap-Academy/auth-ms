@@ -43,7 +43,10 @@ from ..schemas.user import (
     User,
     UsersResponse,
 )
-from ..utils import check_email_deliverability, check_mfa_code, check_recaptcha, recaptcha_enabled, responses
+from ..utils.docs import responses
+from ..utils.email import check_email_deliverability
+from ..utils.mfa import check_mfa_code
+from ..utils.recaptcha import check_recaptcha, recaptcha_enabled
 
 
 router = APIRouter(tags=["users"])
@@ -85,9 +88,8 @@ async def get_users(
     if mfa_enabled is not None:
         query = query.where(models.User.mfa_enabled == mfa_enabled)
 
-    total: int = await db.count(query)
     return {
-        "total": total,
+        "total": await db.count(query),
         "users": [
             user.serialize
             async for user in await db.stream(

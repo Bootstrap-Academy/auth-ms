@@ -13,14 +13,9 @@ from ..database import Base, db, select
 from ..environment import ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_USERNAME
 from ..logger import get_logger
 from ..redis import redis
-from ..utils import (
-    check_email_deliverability,
-    decode_jwt,
-    generate_verification_code,
-    hash_password,
-    send_email,
-    verify_password,
-)
+from ..utils.email import check_email_deliverability, generate_verification_code, send_email
+from ..utils.jwt import decode_jwt
+from ..utils.passwords import hash_password, verify_password
 
 
 if TYPE_CHECKING:
