@@ -2,12 +2,12 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from ..auth import require_verified_email, user_auth
-from ..exceptions.auth import user_responses
+from ..auth import jwt_auth, require_verified_email, static_token_auth, user_auth
+from ..exceptions.auth import InvalidTokenError, user_responses
 from ..exceptions.user import EmailNotVerifiedError
-from ..schemas.test import TestResponse
+from ..schemas.test import JWTAuthResponse, TestResponse
 from ..utils.docs import responses
 
 
@@ -21,7 +21,29 @@ async def test() -> Any:
     return {"result": "hello world"}
 
 
-@router.get("/auth", dependencies=[user_auth], responses=user_responses(list[int]))
+@router.get("/auth/static", dependencies=[static_token_auth], responses=responses(list[int], InvalidTokenError))
+async def test_auth_static() -> Any:
+    """
+    Test endpoint with authentication.
+
+    *Requirements:* **AUTH**
+    """
+
+    return [1, 2, 3]
+
+
+@router.get("/auth/jwt", responses=responses(JWTAuthResponse, InvalidTokenError))
+async def test_auth_jwt(data: dict[Any, Any] = jwt_auth) -> Any:
+    """
+    Test endpoint with authentication.
+
+    *Requirements:* **AUTH**
+    """
+
+    return {"test": [1, 2, 3, 4, 5], "data": data}
+
+
+@router.get("/auth/user", dependencies=[user_auth], responses=user_responses(list[int]))
 async def test_auth() -> Any:
     """
     Test endpoint with authentication.
@@ -29,7 +51,7 @@ async def test_auth() -> Any:
     *Requirements:* **USER**
     """
 
-    return [1, 2, 3]
+    return [2, 4, 6]
 
 
 @router.get(
