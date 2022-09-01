@@ -11,6 +11,9 @@ from api import models  # noqa
 from api.database.database import Base, get_url
 
 
+NAME = "auth"
+
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -47,8 +50,13 @@ def run_migrations_offline() -> None:
 
     """
     url = config.get_main_option("sqlalchemy.url")
+    version_table = f"{NAME}_alembic_version"
     context.configure(
-        url=url, target_metadata=target_metadata, literal_binds=True, dialect_opts={"paramstyle": "named"}
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+        version_table=version_table,
     )
 
     with context.begin_transaction():
@@ -56,7 +64,8 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    version_table = f"{NAME}_alembic_version"
+    context.configure(connection=connection, target_metadata=target_metadata, version_table=version_table)
 
     with context.begin_transaction():
         context.run_migrations()

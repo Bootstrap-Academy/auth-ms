@@ -29,10 +29,10 @@ def _hash_token(token: str) -> str:
 
 
 class Session(Base):
-    __tablename__ = "session"
+    __tablename__ = "auth_session"
 
     id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
-    user_id: Mapped[str] = Column(String(36), ForeignKey("user.id"))
+    user_id: Mapped[str] = Column(String(36), ForeignKey("auth_user.id"))
     user: User = relationship("User", back_populates="sessions")
     device_name: Mapped[str] = Column(Text)
     last_update: Mapped[datetime] = Column(DateTime)

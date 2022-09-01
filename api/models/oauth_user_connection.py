@@ -11,10 +11,10 @@ from ..database import Base, db
 
 
 class OAuthUserConnection(Base):
-    __tablename__ = "oauth_user_connection"
+    __tablename__ = "auth_oauth_user_connection"
 
     id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
-    user_id: Mapped[str] = Column(String(36), ForeignKey("user.id"))
+    user_id: Mapped[str] = Column(String(36), ForeignKey("auth_user.id"))
     user: User = relationship("User", back_populates="oauth_connections")
     provider_id: Mapped[str] = Column(String(64))
     remote_user_id: Mapped[str] = Column(Text)

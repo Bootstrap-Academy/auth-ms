@@ -26,7 +26,7 @@ logger = get_logger(__name__)
 
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "auth_user"
 
     id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
     name: Mapped[str] = Column(String(32), unique=True)
