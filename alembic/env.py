@@ -31,6 +31,8 @@ config.set_main_option("sqlalchemy.url", str(get_url()))
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
 
+version_table = f"{NAME}_alembic_version" if NAME else "alembic_version"
+
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
@@ -50,7 +52,6 @@ def run_migrations_offline() -> None:
 
     """
     url = config.get_main_option("sqlalchemy.url")
-    version_table = f"{NAME}_alembic_version"
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -64,7 +65,6 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    version_table = f"{NAME}_alembic_version"
     context.configure(connection=connection, target_metadata=target_metadata, version_table=version_table)
 
     with context.begin_transaction():
