@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "backend"
+name = "auth-ms"
 version = "0"
 description = ""
 authors = ["Defelo <defelo@the-morpheus.de>"]
 readme = "README.md"
-homepage = "https://github.com/Bootstrap-Academy/backend"
-repository = "https://github.com/Bootstrap-Academy/backend"
+homepage = "https://github.com/Bootstrap-Academy/auth-ms"
+repository = "https://github.com/Bootstrap-Academy/auth-ms"
 packages = [{ include = "api" }]
 
 [tool.poetry.dependencies]
