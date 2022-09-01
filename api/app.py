@@ -20,6 +20,7 @@ Some endpoints require one or more of the following conditions to be met:
 - **VERIFIED**: The email of the authenticated user is verified.
 - **SELF**: The authenticated user must be the same as the affected user. Requires **USER**.
 - **ADMIN**: The authenticated user must be an admin. Requires **USER**.
+- **AUTH**: The request is authenticated using a valid API token (static/JWT).
 """
 
 
