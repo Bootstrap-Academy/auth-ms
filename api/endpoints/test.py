@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from ..auth import jwt_auth, require_verified_email, static_token_auth, user_auth
+from ..auth import jwt_auth, require_verified_email, user_auth
 from ..exceptions.auth import InvalidTokenError, user_responses
 from ..exceptions.user import EmailNotVerifiedError
 from ..schemas.test import JWTAuthResponse, TestResponse
@@ -21,15 +21,15 @@ async def test() -> Any:
     return {"result": "hello world"}
 
 
-@router.get("/auth/static", dependencies=[static_token_auth], responses=responses(list[int], InvalidTokenError))
-async def test_auth_static() -> Any:
-    """
-    Test endpoint with authentication.
-
-    *Requirements:* **AUTH**
-    """
-
-    return [1, 2, 3]
+# @router.get("/auth/static", dependencies=[static_token_auth], responses=responses(list[int], InvalidTokenError))
+# async def test_auth_static() -> Any:
+#     """
+#     Test endpoint with authentication.
+#
+#     *Requirements:* **AUTH**
+#     """
+#
+#     return [1, 2, 3]
 
 
 @router.get("/auth/jwt", responses=responses(JWTAuthResponse, InvalidTokenError))

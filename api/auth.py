@@ -33,19 +33,19 @@ class HTTPAuth(SecurityBase):
         raise NotImplementedError
 
 
-class StaticTokenAuth(HTTPAuth):
-    def __init__(self, token: str) -> None:
-        super().__init__()
-
-        self._token = token
-
-    async def _check_token(self, token: str) -> bool:
-        return token == self._token
-
-    async def __call__(self, request: Request) -> bool:
-        if not await self._check_token(get_token(request)):
-            raise InvalidTokenError
-        return True
+# class StaticTokenAuth(HTTPAuth):
+#     def __init__(self, token: str) -> None:
+#         super().__init__()
+#
+#         self._token = token
+#
+#     async def _check_token(self, token: str) -> bool:
+#         return token == self._token
+#
+#     async def __call__(self, request: Request) -> bool:
+#         if not await self._check_token(get_token(request)):
+#             raise InvalidTokenError
+#         return True
 
 
 class JWTAuth(HTTPAuth):
@@ -76,7 +76,7 @@ class UserAuth(HTTPAuth):
         return session
 
 
-static_token_auth = Depends(StaticTokenAuth("secret token"))
+# static_token_auth = Depends(StaticTokenAuth("secret token"))
 jwt_auth = Depends(JWTAuth())
 
 public_auth = Depends(UserAuth(PermissionLevel.PUBLIC))
