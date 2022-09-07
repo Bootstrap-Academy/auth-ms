@@ -304,7 +304,7 @@ async def request_verification_email(user: models.User = get_user(require_self_o
 )
 async def verify_email(
     code: str = Body(embed=True, regex=VERIFICATION_CODE_REGEX, description="The code from the verification email"),
-    user: models.User = get_user(require_self_or_admin=True),
+    user: models.User = get_user(models.User.sessions, require_self_or_admin=True),
 ) -> Any:
     """
     Verify a user's email address.
