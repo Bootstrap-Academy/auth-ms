@@ -48,11 +48,12 @@ class Session(Base):
         }
 
     @staticmethod
-    async def create(user_id: str, device_name: str) -> tuple[Session, str, str]:
+    async def create(user: User, device_name: str) -> tuple[Session, str, str]:
         refresh_token = secrets.token_urlsafe(64)
         session = Session(
             id=str(uuid4()),
-            user_id=user_id,
+            user_id=user.id,
+            user=user,
             device_name=device_name,
             last_update=datetime.utcnow(),
             refresh_token=_hash_token(refresh_token),
@@ -62,8 +63,12 @@ class Session(Base):
 
     def _generate_access_token(self) -> str:
         return encode_jwt(
-            {"uid": self.user_id, "sid": self.id, "rt": self.refresh_token}, timedelta(seconds=ACCESS_TOKEN_TTL)
+            {"uid": self.user_id, "sid": self.id, "rt": self.refresh_token, "data": self.user.jwt_data},
+            timedelta(seconds=ACCESS_TOKEN_TTL),
         )
+
+    async def invalidate_access_token(self) -> None:
+        await redis.setex(f"session_logout:{self.refresh_token}", ACCESS_TOKEN_TTL, 1)
 
     @staticmethod
     async def from_access_token(access_token: str) -> Session | None:
@@ -84,7 +89,7 @@ class Session(Base):
             await session.logout()
             raise SessionExpiredError
 
-        await redis.setex(f"session_logout:{session.refresh_token}", ACCESS_TOKEN_TTL, 1)
+        await session.invalidate_access_token()
         refresh_token = secrets.token_urlsafe(64)
         session.refresh_token = _hash_token(refresh_token)
         session.last_update = datetime.utcnow()

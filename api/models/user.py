@@ -73,6 +73,14 @@ class User(Base):
             "mfa_enabled": self.mfa_enabled,
         }
 
+    @property
+    def jwt_data(self) -> dict[str, Any]:
+        return {"email_verified": self.email_verified, "admin": self.admin}
+
+    async def invalidate_access_tokens(self) -> None:
+        for session in self.sessions:
+            await session.invalidate_access_token()
+
     @staticmethod
     async def create(
         name: str, display_name: str, email: str, password: str | None, enabled: bool, admin: bool
@@ -115,7 +123,7 @@ class User(Base):
             return
 
         user = await User.create(ADMIN_USERNAME, ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD, True, True)
-        user.email_verification_code = None
+        user.email_verified = True
         logger.info(f"Admin user '{ADMIN_USERNAME}' ({ADMIN_EMAIL}) has been created!")
         if not await check_email_deliverability(user.email):
             logger.warning(f"Cannot send emails to '{user.email}'!")
@@ -133,7 +141,7 @@ class User(Base):
         from .session import Session
 
         self.last_login = datetime.utcnow()
-        return await Session.create(self.id, device_name)
+        return await Session.create(self, device_name)
 
     @staticmethod
     async def from_access_token(access_token: str) -> User | None:

@@ -241,12 +241,14 @@ async def update_user(
 
         user.email = data.email
         user.email_verified = False
+        await user.invalidate_access_tokens()
 
     if data.email_verified is not None and data.email_verified != user.email_verified:
         if not admin:
             raise PermissionDeniedError
 
         user.email_verified = data.email_verified
+        await user.invalidate_access_tokens()
 
     if data.password is not None:
         if not data.password and not user.oauth_connections:
@@ -267,6 +269,7 @@ async def update_user(
             raise PermissionDeniedError
 
         user.admin = data.admin
+        await user.invalidate_access_tokens()
 
     return user.serialize
 
@@ -318,6 +321,7 @@ async def verify_email(
         raise InvalidVerificationCodeError
 
     user.email_verified = True
+    await user.invalidate_access_tokens()
     return user.serialize
 
 

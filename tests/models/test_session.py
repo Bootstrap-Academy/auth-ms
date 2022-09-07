@@ -37,14 +37,15 @@ async def test__serialize() -> None:
 @db_wrapper
 async def test__create(mocker: MockerFixture) -> None:
     generate_access_token = mocker.patch("api.models.session.Session._generate_access_token")
+    user = await _get_user()
 
-    obj, at, rt = await Session.create("my_user_id", "my_device_name")
+    obj, at, rt = await Session.create(user, "my_device_name")
     sessions = await db.all(select(Session))
     assert sessions == [obj]
 
     generate_access_token.assert_called_once_with()
 
-    assert obj.user_id == "my_user_id"
+    assert obj.user_id == user.id
     assert obj.device_name == "my_device_name"
     assert (datetime.utcnow() - obj.last_update).total_seconds() < 10
     assert obj.refresh_token == _session._hash_token(rt)
@@ -54,13 +55,14 @@ async def test__create(mocker: MockerFixture) -> None:
 async def test__generate_access_token(mocker: MockerFixture) -> None:
     mocker.patch("api.models.session.ACCESS_TOKEN_TTL", 42)
     encode_jwt = mocker.patch("api.models.session.encode_jwt")
+    user = MagicMock()
 
-    session = Session(user_id="my_user_id", id="my_id", refresh_token="my_refresh_token")  # noqa: S106
+    session = Session(user_id=user.id, user=user, id="my_id", refresh_token="my_refresh_token")  # noqa: S106
 
     result = session._generate_access_token()
 
     encode_jwt.assert_called_once_with(
-        {"uid": "my_user_id", "sid": "my_id", "rt": "my_refresh_token"}, timedelta(seconds=42)
+        {"uid": user.id, "sid": "my_id", "rt": "my_refresh_token", "data": user.jwt_data}, timedelta(seconds=42)
     )
     assert result == encode_jwt()
 

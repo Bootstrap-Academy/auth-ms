@@ -124,7 +124,7 @@ async def test__create_session(mocker: MockerFixture) -> None:
     user = User(id="my_user_id")
     session = await user.create_session("my device name")
 
-    create.assert_called_once_with("my_user_id", "my device name")
+    create.assert_called_once_with(user, "my device name")
     assert session == await create()
     assert user.last_login is not None
     assert abs(datetime.utcnow() - user.last_login).total_seconds() < 10
