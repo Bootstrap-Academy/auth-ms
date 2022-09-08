@@ -17,10 +17,9 @@
 ## Requirements
 Some endpoints require one or more of the following conditions to be met:
 - **USER**: The user is authenticated and has a valid session.
-- **VERIFIED**: The email of the authenticated user is verified.
-- **SELF**: The authenticated user must be the same as the affected user. Requires **USER**.
+- **VERIFIED**: The email of the authenticated user is verified (or the user is an admin). Requires **USER**.
+- **SELF**: The authenticated user must be the same as the affected user (`user_id` parameter). Requires **USER**.
 - **ADMIN**: The authenticated user must be an admin. Requires **USER**.
-- **AUTH**: The request is authenticated using a valid API token (static/JWT).
 """
 
 
