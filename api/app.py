@@ -22,7 +22,6 @@ Some endpoints require one or more of the following conditions to be met:
 - **ADMIN**: The authenticated user must be an admin. Requires **USER**.
 """
 
-
 import asyncio
 from typing import Awaitable, Callable, TypeVar
 
