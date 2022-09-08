@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from . import test
+from . import user
 
 
-INTERNAL_ROUTERS: list[APIRouter] = [module.router for module in [test]]
+INTERNAL_ROUTERS: list[APIRouter] = [module.router for module in [user]]
