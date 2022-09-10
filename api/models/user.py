@@ -10,9 +10,9 @@ from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.sql import Select
 
 from ..database import Base, db, select
-from ..environment import ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_USERNAME
 from ..logger import get_logger
 from ..redis import redis
+from ..settings import settings
 from ..utils.email import check_email_deliverability, generate_verification_code, send_email
 from ..utils.jwt import decode_jwt
 from ..utils.passwords import hash_password, verify_password
@@ -122,9 +122,11 @@ class User(Base):
         if await db.exists(select(User)):
             return
 
-        user = await User.create(ADMIN_USERNAME, ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD, True, True)
+        user = await User.create(
+            settings.admin_username, settings.admin_username, settings.admin_email, settings.admin_password, True, True
+        )
         user.email_verified = True
-        logger.info(f"Admin user '{ADMIN_USERNAME}' ({ADMIN_EMAIL}) has been created!")
+        logger.info(f"Admin user '{user.name}' ({user.email}) has been created!")
         if not await check_email_deliverability(user.email):
             logger.warning(f"Cannot send emails to '{user.email}'!")
 

@@ -7,8 +7,8 @@ import aiosmtplib
 import email_validator
 
 from .async_thread import run_in_thread
-from ..environment import SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_PORT, SMTP_STARTTLS, SMTP_TLS, SMTP_USER
 from ..logger import get_logger
+from ..settings import settings
 
 
 logger = get_logger(__name__)
@@ -30,7 +30,7 @@ async def send_email(recipient: str, title: str, body: str, content_type: str = 
     logger.debug(f"Sending email to {recipient} ({title})")
 
     message = EmailMessage()
-    message["From"] = SMTP_FROM
+    message["From"] = settings.smtp_from
     message["To"] = recipient
     message["Subject"] = title
     message.set_type(content_type)
@@ -39,12 +39,12 @@ async def send_email(recipient: str, title: str, body: str, content_type: str = 
     asyncio.create_task(
         aiosmtplib.send(
             message,
-            hostname=SMTP_HOST,
-            port=SMTP_PORT,
-            username=SMTP_USER,
-            password=SMTP_PASSWORD,
-            use_tls=SMTP_TLS,
-            start_tls=SMTP_STARTTLS,
+            hostname=settings.smtp_host,
+            port=settings.smtp_port,
+            username=settings.smtp_user,
+            password=settings.smtp_password,
+            use_tls=settings.smtp_tls,
+            start_tls=settings.smtp_starttls,
         )
     )
 
