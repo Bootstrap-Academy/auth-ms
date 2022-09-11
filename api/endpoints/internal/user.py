@@ -14,4 +14,6 @@ router = APIRouter()
 
 @router.get("/users/{user_id}", responses=internal_responses(User, UserNotFoundError))
 async def get_user_by_id(user: models.User = get_user()) -> Any:
+    """Return a user by ID."""
+
     return user.serialize
