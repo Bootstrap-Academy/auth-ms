@@ -10,7 +10,7 @@ packages = [{ include = "api" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-fastapi = "^0.82.0"
+fastapi = "^0.83.0"
 uvicorn = "^0.18.3"
 aiohttp = "^3.8.1"
 aioredis = "^2.0.1"
@@ -24,7 +24,7 @@ argon2-cffi = "^21.3.0"
 PyJWT = "^2.3.0"
 starlette = "^0.19.1"
 alembic = "^1.8.1"
-pyotp = "^2.6.0"
+pyotp = "^2.7.0"
 jq = "^1.2.3"
 aiosmtplib = "^1.1.7"
 email-validator = "^1.2.1"
