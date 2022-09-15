@@ -115,6 +115,7 @@ async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True
     responses=user_responses(
         LoginResponse,
         UserAlreadyExistsError,
+        EmailAlreadyExistsError,
         RemoteAlreadyLinkedError,
         NoLoginMethodError,
         RegistrationDisabledError,
