@@ -23,7 +23,9 @@ def check_email_deliverability(email: str) -> bool:
     return True
 
 
-async def send_email(recipient: str, title: str, body: str, content_type: str = "text/plain") -> None:
+async def send_email(
+    recipient: str, title: str, body: str, content_type: str = "text/plain", *, reply_to: str | None = None
+) -> None:
     if not await check_email_deliverability(recipient):
         raise ValueError("Invalid email address")
 
@@ -33,6 +35,8 @@ async def send_email(recipient: str, title: str, body: str, content_type: str = 
     message["From"] = settings.smtp_from
     message["To"] = recipient
     message["Subject"] = title
+    if reply_to:
+        message["Reply-To"] = reply_to
     message.set_type(content_type)
     message.set_content(body)
 

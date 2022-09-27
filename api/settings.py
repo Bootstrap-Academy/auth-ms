@@ -71,6 +71,8 @@ class Settings(BaseSettings):
     smtp_tls: bool = False
     smtp_starttls: bool = True
 
+    contact_email: str | None = None
+
     open_registration: bool = True
     open_oauth_registration: bool = True
 
