@@ -31,7 +31,7 @@ async def test__jwt_encode(
     match = re.match(r"^([a-zA-Z\d\-_]+)\.([a-zA-Z\d\-_]+)\.[a-zA-Z\d\-_]+$", token)
     assert match, "Invalid JWT format"
 
-    assert _jwt.get_unverified_header(token) == {"typ": "JWT", "alg": "HS256"}  # type: ignore
+    assert _jwt.get_unverified_header(token) == {"typ": "JWT", "alg": "HS256"}
     assert _jwt.decode(token, "My JWT secret", ["HS256"], {"verify_exp": False}) == expected
 
 
