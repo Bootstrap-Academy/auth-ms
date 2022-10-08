@@ -23,6 +23,7 @@ class User(BaseModel):
     mfa_enabled: bool = Field(description="Whether the user has enabled MFA")
     description: str | None = Field(description="Description of the user")
     tags: list[str] = Field(description="Tags for the user")
+    avatar_url: str = Field(description="URL of the user's avatar")
 
     Config = example(
         id="a13e63b1-9830-4604-8b7f-397d2c29955e",

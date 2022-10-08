@@ -53,6 +53,7 @@ async def test__serialize(
         "mfa_enabled": mfa,
         "description": description,
         "tags": tags,
+        "avatar_url": "https://www.gravatar.com/avatar/4954756b2cdeccd47bc819726b270303",
     }
 
 

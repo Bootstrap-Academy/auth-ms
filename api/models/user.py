@@ -13,6 +13,7 @@ from sqlalchemy.sql import Select
 from ..database import Base, db, select
 from ..logger import get_logger
 from ..redis import redis
+from ..services.gravatar import get_gravatar_url
 from ..settings import settings
 from ..utils.email import check_email_deliverability, generate_verification_code, send_email
 from ..utils.jwt import decode_jwt
@@ -84,6 +85,7 @@ class User(Base):
             "mfa_enabled": self.mfa_enabled,
             "description": self.description,
             "tags": self.tags,
+            "avatar_url": get_gravatar_url(self.email),
         }
 
     @property
