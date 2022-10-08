@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, String, func, or_
@@ -41,10 +42,20 @@ class User(Base):
     mfa_secret: Mapped[str | None] = Column(String(32), nullable=True)
     mfa_enabled: Mapped[bool] = Column(Boolean, default=False)
     mfa_recovery_code: Mapped[str | None] = Column(String(64), nullable=True)
+    description: Mapped[str | None] = Column(String(1024), nullable=True)
+    _tags: Mapped[str] = Column(String(550))
     sessions: list[Session] = relationship("Session", back_populates="user", cascade="all, delete")
     oauth_connections: list[OAuthUserConnection] = relationship(
         "OAuthUserConnection", back_populates="user", cascade="all, delete"
     )
+
+    @property
+    def tags(self) -> list[str]:
+        return cast(list[str], json.loads(self._tags)) if self._tags else []
+
+    @tags.setter
+    def tags(self, value: list[str]) -> None:
+        self._tags = json.dumps(value)
 
     @property
     def email_verified(self) -> bool:
@@ -71,6 +82,8 @@ class User(Base):
             "admin": self.admin,
             "password": bool(self.password),
             "mfa_enabled": self.mfa_enabled,
+            "description": self.description,
+            "tags": self.tags,
         }
 
     @property
@@ -99,7 +112,9 @@ class User(Base):
             mfa_secret=None,
             mfa_enabled=False,
             mfa_recovery_code=None,
+            description=None,
         )
+        user.tags = []
         await db.add(user)
         return user
 

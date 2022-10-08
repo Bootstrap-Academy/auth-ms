@@ -13,10 +13,16 @@ from api.utils.passwords import verify_password
 
 
 @pytest.mark.parametrize(
-    "enabled,admin,password,mfa,verified",
-    [(True, False, "asdf", False, True), (False, True, None, True, False), (True, True, None, False, True)],
+    "enabled,admin,password,mfa,verified,description,tags",
+    [
+        (True, False, "asdf", False, True, None, []),
+        (False, True, None, True, False, "Hello World!", ["foo", "bar"]),
+        (True, True, None, False, True, None, ["a", "b", "c", "d", "e", "f"]),
+    ],
 )
-async def test__serialize(enabled: bool, admin: bool, password: str | None, mfa: bool, verified: bool) -> None:
+async def test__serialize(
+    enabled: bool, admin: bool, password: str | None, mfa: bool, verified: bool, description: str, tags: list[str]
+) -> None:
     obj = User(
         id="user_id",
         name="user_name",
@@ -29,7 +35,9 @@ async def test__serialize(enabled: bool, admin: bool, password: str | None, mfa:
         admin=admin,
         password=password,
         mfa_enabled=mfa,
+        description=description,
     )
+    obj.tags = tags
 
     assert obj.serialize == {
         "id": "user_id",
@@ -43,6 +51,8 @@ async def test__serialize(enabled: bool, admin: bool, password: str | None, mfa:
         "admin": admin,
         "password": bool(password),
         "mfa_enabled": mfa,
+        "description": description,
+        "tags": tags,
     }
 
 

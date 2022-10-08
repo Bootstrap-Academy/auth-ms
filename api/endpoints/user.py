@@ -272,6 +272,12 @@ async def update_user(
         user.admin = data.admin
         await user.invalidate_access_tokens()
 
+    if data.description is not None and data.description != user.description:
+        user.description = data.description
+
+    if data.tags is not None and data.tags != user.tags:
+        user.tags = data.tags
+
     return user.serialize
 
 

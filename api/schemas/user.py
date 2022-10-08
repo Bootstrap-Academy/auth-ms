@@ -21,6 +21,8 @@ class User(BaseModel):
     admin: bool = Field(description="Whether the user is an administrator")
     password: bool = Field(description="Whether the user has a password (if not, login is only possible via OAuth)")
     mfa_enabled: bool = Field(description="Whether the user has enabled MFA")
+    description: str | None = Field(description="Description of the user")
+    tags: list[str] = Field(description="Tags for the user")
 
     Config = example(
         id="a13e63b1-9830-4604-8b7f-397d2c29955e",
@@ -34,6 +36,8 @@ class User(BaseModel):
         admin=False,
         password=True,
         mfa_enabled=False,
+        description="This is a test user",
+        tags=["test", "foo", "bar"],
     )
 
 
@@ -65,6 +69,8 @@ class UpdateUser(BaseModel):
     )
     enabled: bool | None = Field(description="Change whether the user is enabled")
     admin: bool | None = Field(description="Change whether the user is an administrator")
+    description: str | None = Field(max_length=1024, description="Change the user's description")
+    tags: list[str] | None = Field(max_items=8, max_length=64, description="Change the user's tags")
 
 
 class RequestPasswordReset(BaseModel):
