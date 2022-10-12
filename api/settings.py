@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     admin_email: str = "admin@bootstrap.academy"
     admin_password: str = "admin"
 
+    challenges_login_url: str = "https://the-morpheus.cc/login"
+
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_user: str = ""

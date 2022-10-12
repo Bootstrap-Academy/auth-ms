@@ -1,6 +1,7 @@
 """Endpoints for session management"""
 
 import hashlib
+from secrets import token_urlsafe
 from typing import Any
 from uuid import uuid4
 
@@ -178,6 +179,42 @@ async def oauth_login(data: OAuthLogin, request: Request) -> Any:
             "access_token": access_token,
             "refresh_token": refresh_token,
         }
+    }
+
+
+@router.get("/sessions/challenges/login_url", responses=user_responses(str))
+async def get_challenges_login_url(session: models.Session = user_auth) -> Any:
+    """
+    Get a login URL for the coding challenges website.
+
+    *Requirements:* **USER**
+    """
+
+    code = token_urlsafe(48)
+    await redis.setex(f"challenges_login_code:{code}", 60, session.user_id)
+    return f"{settings.challenges_login_url}?code={code}"
+
+
+@router.post("/sessions/challenges", responses=responses(LoginResponse, InvalidCodeError))
+async def login_challenges(request: Request, code: str = Body(embed=True)) -> Any:
+    """Create a new session for the coding challenges website."""
+
+    user_id = await redis.get(key := f"challenges_login_code:{code}")
+    if not user_id:
+        raise InvalidCodeError
+
+    await redis.delete(key)
+
+    user = await db.get(models.User, id=user_id)
+    if not user:
+        raise InvalidCodeError
+
+    session, access_token, refresh_token = await user.create_session(request.headers.get("User-agent", "")[:256])
+    return {
+        "user": user.serialize,
+        "session": session.serialize,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
     }
 
 
