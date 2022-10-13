@@ -61,6 +61,7 @@ async def get_users(
     enabled: bool | None = Query(None, description="Return only users with the given enabled status"),
     admin: bool | None = Query(None, description="Return only users with the given admin status"),
     mfa_enabled: bool | None = Query(None, description="Return only users with the given MFA status"),
+    email_verified: bool | None = Query(None, description="Return only users with the given email verification status"),
 ) -> Any:
     """
     Return a list of all users matching the given criteria.
@@ -87,6 +88,10 @@ async def get_users(
         query = query.where(models.User.admin == admin)
     if mfa_enabled is not None:
         query = query.where(models.User.mfa_enabled == mfa_enabled)
+    if email_verified is True:
+        query = query.where(models.User.email_verification_code == None)  # noqa
+    elif email_verified is False:
+        query = query.where(models.User.email_verification_code != None)  # noqa
 
     return {
         "total": await db.count(query),
