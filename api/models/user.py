@@ -33,7 +33,7 @@ class User(Base):
     id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
     name: Mapped[str] = Column(String(32), unique=True)
     display_name: Mapped[str] = Column(String(64))
-    email: Mapped[str] = Column(String(254), unique=True)
+    email: Mapped[str | None] = Column(String(254), unique=True)
     email_verification_code: Mapped[str | None] = Column(String(32), nullable=True)
     password: Mapped[str | None] = Column(String(128), nullable=True)
     registration: Mapped[datetime] = Column(DateTime)
@@ -85,7 +85,7 @@ class User(Base):
             "mfa_enabled": self.mfa_enabled,
             "description": self.description,
             "tags": self.tags,
-            "avatar_url": get_gravatar_url(self.email),
+            "avatar_url": get_gravatar_url(self.email) if self.email else None,
         }
 
     @property
@@ -176,12 +176,17 @@ class User(Base):
             await session.logout()
 
     async def send_verification_email(self) -> None:
+        if not self.email:
+            raise ValueError("User has no email")
         if not self.email_verification_code:
             raise ValueError("User already verified")
 
         await send_email(self.email, "Verify your email", f"Your verification code: {self.email_verification_code}")
 
     async def send_password_reset_email(self) -> None:
+        if not self.email:
+            raise ValueError("User has no email")
+
         code = generate_verification_code()
         await redis.setex(f"password_reset:{self.id}", 3600, code)
         await send_email(self.email, "Reset your password", f"Your password reset code: {code}")
@@ -207,7 +212,7 @@ class User(Base):
 
     async def incr_failed_logins(self) -> None:
         async with redis.pipeline() as pipe:
-            for key in [self.name, self.email]:
+            for key in [self.name, self.email] if self.email else [self.name]:
                 await pipe.incr(f"failed_login_attempts:{hashlib.sha256(key.lower().encode()).hexdigest()}")
             await pipe.execute()
 
@@ -215,6 +220,6 @@ class User(Base):
         await redis.delete(
             *[
                 f"failed_login_attempts:{hashlib.sha256(key.lower().encode()).hexdigest()}"
-                for key in [self.name, self.email]
+                for key in ([self.name, self.email] if self.email else [self.name])
             ]
         )
