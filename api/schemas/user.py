@@ -13,7 +13,7 @@ class User(BaseModel):
     id: str = Field(description="Unique identifier for the user")
     name: str = Field(description="Unique username")
     display_name: str = Field(description="Full name of the user")
-    email: str = Field(description="Email address of the user")
+    email: str | None = Field(description="Email address of the user")
     email_verified: bool = Field(description="Whether the user has verified their email address")
     registration: float = Field(description="Timestamp of the user's registration")
     last_login: float | None = Field(description="Timestamp of the user's last successful login")
