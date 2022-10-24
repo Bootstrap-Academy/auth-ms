@@ -1,8 +1,9 @@
 from asyncio import Event
 from contextvars import ContextVar
+from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Type, TypeVar, cast
 
-from sqlalchemy import Column
+from sqlalchemy import Column, DateTime, TypeDecorator
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.future import select as sa_select
@@ -59,6 +60,21 @@ def delete(table: Any) -> Delete:
     """Shortcut for :meth:`sqlalchemy.sql.expression.delete`"""
 
     return sa_delete(table)
+
+
+class UTCDateTime(TypeDecorator[Any]):
+    impl = DateTime
+
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, _: Any) -> Any:
+        return value
+
+    def process_result_value(self, value: datetime | None, _: Any) -> datetime | None:
+        if value is None:
+            return None
+
+        return value.replace(tzinfo=timezone.utc)
 
 
 class Base(metaclass=DeclarativeMeta):

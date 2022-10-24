@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.sql import Select
 
 from ..database import Base, db, select
+from ..database.database import UTCDateTime
 from ..logger import get_logger
 from ..redis import redis
 from ..services.gravatar import get_gravatar_url
@@ -18,6 +19,7 @@ from ..settings import settings
 from ..utils.email import check_email_deliverability, generate_verification_code, send_email
 from ..utils.jwt import decode_jwt
 from ..utils.passwords import hash_password, verify_password
+from ..utils.utc import utcnow
 
 
 if TYPE_CHECKING:
@@ -36,8 +38,8 @@ class User(Base):
     email: Mapped[str | None] = Column(String(254), unique=True)
     email_verification_code: Mapped[str | None] = Column(String(32), nullable=True)
     password: Mapped[str | None] = Column(String(128), nullable=True)
-    registration: Mapped[datetime] = Column(DateTime)
-    last_login: Mapped[datetime | None] = Column(DateTime, nullable=True)
+    registration: Mapped[datetime] = Column(UTCDateTime)
+    last_login: Mapped[datetime | None] = Column(UTCDateTime, nullable=True)
     enabled: Mapped[bool] = Column(Boolean, default=True)
     admin: Mapped[bool] = Column(Boolean, default=False)
     mfa_secret: Mapped[str | None] = Column(String(32), nullable=True)
@@ -107,7 +109,7 @@ class User(Base):
             email=email,
             email_verification_code=generate_verification_code(),
             password=await hash_password(password) if password else None,
-            registration=datetime.utcnow(),
+            registration=utcnow(),
             last_login=None,
             enabled=enabled,
             admin=admin,
@@ -159,7 +161,7 @@ class User(Base):
     async def create_session(self, device_name: str) -> tuple[Session, str, str]:
         from .session import Session
 
-        self.last_login = datetime.utcnow()
+        self.last_login = utcnow()
         return await Session.create(self, device_name)
 
     @staticmethod

@@ -1,5 +1,4 @@
 import hashlib
-from datetime import datetime
 from typing import Any, Literal, Type
 from unittest.mock import AsyncMock, MagicMock
 
@@ -32,6 +31,7 @@ from api.models.session import _hash_token
 from api.settings import settings
 from api.utils.jwt import decode_jwt
 from api.utils.passwords import verify_password
+from api.utils.utc import utcnow
 
 
 async def _get_users() -> list[models.User]:
@@ -244,9 +244,9 @@ async def test__create_user(
             assert await verify_password("Password1234", user.password)
         else:
             assert user.password is None
-        assert abs(datetime.utcnow() - user.registration).total_seconds() < 10
+        assert abs(utcnow() - user.registration).total_seconds() < 10
         assert user.last_login is not None
-        assert abs(datetime.utcnow() - user.last_login).total_seconds() < 10
+        assert abs(utcnow() - user.last_login).total_seconds() < 10
         if is_admin:
             assert user.admin is admin
             assert user.enabled is enabled

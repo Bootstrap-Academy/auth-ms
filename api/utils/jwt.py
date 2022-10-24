@@ -1,13 +1,14 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any
 
 import jwt
 
+from .utc import utcnow
 from ..settings import settings
 
 
 def encode_jwt(data: dict[Any, Any], ttl: timedelta) -> str:
-    return jwt.encode({**data, "exp": datetime.utcnow() + ttl}, settings.jwt_secret, "HS256")
+    return jwt.encode({**data, "exp": utcnow() + ttl}, settings.jwt_secret, "HS256")
 
 
 def decode_jwt(

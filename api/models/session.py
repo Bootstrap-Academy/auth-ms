@@ -6,15 +6,17 @@ from datetime import datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Column, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, relationship
 
 from .user import User
 from ..database import Base, db, db_wrapper, delete
+from ..database.database import UTCDateTime
 from ..logger import get_logger
 from ..redis import redis
 from ..settings import settings
 from ..utils.jwt import decode_jwt, encode_jwt
+from ..utils.utc import utcnow
 
 
 logger = get_logger(__name__)
@@ -35,7 +37,7 @@ class Session(Base):
     user_id: Mapped[str] = Column(String(36), ForeignKey("auth_user.id"))
     user: User = relationship("User", back_populates="sessions")
     device_name: Mapped[str] = Column(Text)
-    last_update: Mapped[datetime] = Column(DateTime)
+    last_update: Mapped[datetime] = Column(UTCDateTime)
     refresh_token: Mapped[str] = Column(String(64), unique=True)
 
     @property
@@ -55,7 +57,7 @@ class Session(Base):
             user_id=user.id,
             user=user,
             device_name=device_name,
-            last_update=datetime.utcnow(),
+            last_update=utcnow(),
             refresh_token=_hash_token(refresh_token),
         )
         await db.add(session)
@@ -85,14 +87,14 @@ class Session(Base):
         session: Session | None = await db.get(Session, Session.user, refresh_token=token_hash)
         if not session:
             raise ValueError("Invalid refresh token")
-        if datetime.utcnow() > session.last_update + timedelta(seconds=settings.refresh_token_ttl):
+        if utcnow() > session.last_update + timedelta(seconds=settings.refresh_token_ttl):
             await session.logout()
             raise SessionExpiredError
 
         await session.invalidate_access_token()
         refresh_token = secrets.token_urlsafe(64)
         session.refresh_token = _hash_token(refresh_token)
-        session.last_update = datetime.utcnow()
+        session.last_update = utcnow()
         return session, session._generate_access_token(), refresh_token
 
     async def logout(self) -> None:
@@ -102,6 +104,4 @@ class Session(Base):
 
 @db_wrapper
 async def clean_expired_sessions() -> None:
-    await db.exec(
-        delete(Session).where(Session.last_update < datetime.utcnow() - timedelta(seconds=settings.refresh_token_ttl))
-    )
+    await db.exec(delete(Session).where(Session.last_update < utcnow() - timedelta(seconds=settings.refresh_token_ttl)))

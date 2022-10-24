@@ -1,4 +1,3 @@
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -10,6 +9,7 @@ from api.database import db, db_wrapper, select
 from api.models import User
 from api.settings import settings
 from api.utils.passwords import verify_password
+from api.utils.utc import utcfromtimestamp, utcnow
 
 
 @pytest.mark.parametrize(
@@ -29,8 +29,8 @@ async def test__serialize(
         display_name="User Name 42",
         email="user42@example.com",
         email_verification_code=None if verified else "asdf-1234",
-        registration=datetime.fromtimestamp(123456),
-        last_login=datetime.fromtimestamp(345678),
+        registration=utcfromtimestamp(123456),
+        last_login=utcfromtimestamp(345678),
         enabled=enabled,
         admin=admin,
         password=password,
@@ -74,7 +74,7 @@ async def test__create(enabled: bool, admin: bool, password: str | None) -> None
     else:
         assert obj.password is None
 
-    assert abs(datetime.utcnow() - obj.registration).total_seconds() < 10
+    assert abs(utcnow() - obj.registration).total_seconds() < 10
     assert obj.last_login is None
     assert obj.enabled == enabled
     assert obj.admin == admin
@@ -140,7 +140,7 @@ async def test__create_session(mocker: MockerFixture) -> None:
     create.assert_called_once_with(user, "my device name")
     assert session == await create()
     assert user.last_login is not None
-    assert abs(datetime.utcnow() - user.last_login).total_seconds() < 10
+    assert abs(utcnow() - user.last_login).total_seconds() < 10
 
 
 async def test__from_access_token__invalid_jwt(mocker: MockerFixture) -> None:

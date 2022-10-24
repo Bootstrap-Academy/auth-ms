@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -10,6 +10,7 @@ from api.models import Session, User
 from api.models import session as _session
 from api.models.session import SessionExpiredError
 from api.settings import settings
+from api.utils.utc import utcfromtimestamp, utcnow
 
 
 TEST_HASH = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
@@ -24,9 +25,7 @@ async def test__hash_token() -> None:
 
 
 async def test__serialize() -> None:
-    obj = Session(
-        id="my_id", user_id="my_user_id", device_name="my_device_name", last_update=datetime.fromtimestamp(1234567)
-    )
+    obj = Session(id="my_id", user_id="my_user_id", device_name="my_device_name", last_update=utcfromtimestamp(1234567))
 
     assert obj.serialize == {
         "id": "my_id",
@@ -49,7 +48,7 @@ async def test__create(mocker: MockerFixture) -> None:
 
     assert obj.user_id == user.id
     assert obj.device_name == "my_device_name"
-    assert (datetime.utcnow() - obj.last_update).total_seconds() < 10
+    assert (utcnow() - obj.last_update).total_seconds() < 10
     assert obj.refresh_token == _session._hash_token(rt)
     assert at == generate_access_token()
 
@@ -122,7 +121,7 @@ async def test__refresh__session_expired(monkeypatch: MonkeyPatch) -> None:
 
     user = await _get_user()
     session, _, rt = await user.create_session("my_device_name")
-    session.last_update = datetime.utcnow() - timedelta(seconds=43)
+    session.last_update = utcnow() - timedelta(seconds=43)
     session.logout = AsyncMock()  # type: ignore
 
     with pytest.raises(SessionExpiredError):
@@ -147,7 +146,7 @@ async def test__refresh__ok(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> 
     session._generate_access_token.assert_called_once_with()
 
     assert result == session
-    assert (datetime.utcnow() - result.last_update).total_seconds() < 10
+    assert (utcnow() - result.last_update).total_seconds() < 10
     assert result.refresh_token == _session._hash_token(rt)
     assert at == session._generate_access_token()
 
@@ -175,10 +174,10 @@ async def test__clean_expired_sessions(monkeypatch: MonkeyPatch) -> None:
 
     async with db_context():
         user = await _get_user()
-        (await user.create_session("dev1"))[0].last_update = datetime.utcnow() - timedelta(seconds=200)
-        (await user.create_session("dev2"))[0].last_update = datetime.utcnow() - timedelta(seconds=50)
-        (await user.create_session("dev3"))[0].last_update = datetime.utcnow() - timedelta(seconds=30)
-        (await user.create_session("dev4"))[0].last_update = datetime.utcnow() - timedelta(seconds=20)
+        (await user.create_session("dev1"))[0].last_update = utcnow() - timedelta(seconds=200)
+        (await user.create_session("dev2"))[0].last_update = utcnow() - timedelta(seconds=50)
+        (await user.create_session("dev3"))[0].last_update = utcnow() - timedelta(seconds=30)
+        (await user.create_session("dev4"))[0].last_update = utcnow() - timedelta(seconds=20)
 
     await _session.clean_expired_sessions()
 
