@@ -68,7 +68,10 @@ class UTCDateTime(TypeDecorator[Any]):
     cache_ok = True
 
     def process_bind_param(self, value: Any, _: Any) -> Any:
-        return value
+        if value is None:
+            return None
+
+        return value.replace(tzinfo=None)
 
     def process_result_value(self, value: datetime | None, _: Any) -> datetime | None:
         if value is None:
