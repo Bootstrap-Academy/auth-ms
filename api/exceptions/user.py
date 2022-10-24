@@ -103,3 +103,9 @@ class RecaptchaError(APIException):
     status_code = status.HTTP_412_PRECONDITION_FAILED
     detail = "Recaptcha failed"
     description = "The ReCaptcha response is invalid."
+
+
+class NewsletterAlreadySubscribedError(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    detail = "Newsletter already subscribed"
+    description = "The newsletter has already been subscribed to."

@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, DateTime, String, func, or_
+from sqlalchemy import Boolean, Column, String, func, or_
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.sql import Select
 
@@ -47,6 +47,7 @@ class User(Base):
     mfa_recovery_code: Mapped[str | None] = Column(String(64), nullable=True)
     description: Mapped[str | None] = Column(String(1024), nullable=True)
     _tags: Mapped[str] = Column(String(550))
+    newsletter: Mapped[bool] = Column(Boolean)
     sessions: list[Session] = relationship("Session", back_populates="user", cascade="all, delete")
     oauth_connections: list[OAuthUserConnection] = relationship(
         "OAuthUserConnection", back_populates="user", cascade="all, delete"
@@ -87,6 +88,7 @@ class User(Base):
             "mfa_enabled": self.mfa_enabled,
             "description": self.description,
             "tags": self.tags,
+            "newsletter": self.newsletter,
             "avatar_url": get_gravatar_url(self.email) if self.email else None,
         }
 
@@ -117,6 +119,7 @@ class User(Base):
             mfa_enabled=False,
             mfa_recovery_code=None,
             description=None,
+            newsletter=False,
         )
         user.tags = []
         await db.add(user)
@@ -195,6 +198,22 @@ class User(Base):
 
     async def check_password_reset_code(self, code: str) -> bool:
         value: str | None = await redis.get(key := f"password_reset:{self.id}")
+        if not value or code.lower() != value.lower():
+            return False
+
+        await redis.delete(key)
+        return True
+
+    async def request_newsletter_email(self) -> None:
+        if not self.email:
+            raise ValueError("User has no email")
+
+        code = generate_verification_code()
+        await redis.setex(f"newsletter:{self.id}", 3600, code)
+        await send_email(self.email, "Subscribe to the newsletter", f"code: {code}")
+
+    async def check_newsletter_code(self, code: str) -> bool:
+        value: str | None = await redis.get(key := f"newsletter:{self.id}")
         if not value or code.lower() != value.lower():
             return False
 

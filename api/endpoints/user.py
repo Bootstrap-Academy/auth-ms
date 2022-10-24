@@ -22,6 +22,7 @@ from ..exceptions.user import (
     MFAAlreadyEnabledError,
     MFANotEnabledError,
     MFANotInitializedError,
+    NewsletterAlreadySubscribedError,
     NoLoginMethodError,
     OAuthRegistrationDisabledError,
     PasswordResetFailedError,
@@ -62,6 +63,7 @@ async def get_users(
     admin: bool | None = Query(None, description="Return only users with the given admin status"),
     mfa_enabled: bool | None = Query(None, description="Return only users with the given MFA status"),
     email_verified: bool | None = Query(None, description="Return only users with the given email verification status"),
+    newsletter: bool | None = Query(None, description="Return only users with the given newsletter sub status"),
 ) -> Any:
     """
     Return a list of all users matching the given criteria.
@@ -92,6 +94,8 @@ async def get_users(
         query = query.where(models.User.email_verification_code == None)  # noqa
     elif email_verified is False:
         query = query.where(models.User.email_verification_code != None)  # noqa
+    if newsletter is not None:
+        query = query.where(models.User.newsletter == newsletter)
 
     return {
         "total": await db.count(query),
@@ -283,6 +287,12 @@ async def update_user(
     if data.tags is not None and data.tags != user.tags:
         user.tags = data.tags
 
+    if data.newsletter is not None and data.newsletter != user.newsletter:
+        if not admin and data.newsletter is True:
+            await user.request_newsletter_email()
+        else:
+            user.newsletter = data.newsletter
+
     return user.serialize
 
 
@@ -334,6 +344,32 @@ async def verify_email(
 
     user.email_verified = True
     await user.invalidate_access_tokens()
+    return user.serialize
+
+
+@router.put(
+    "/users/{user_id}/newsletter",
+    responses=admin_responses(User, UserNotFoundError, InvalidVerificationCodeError, NewsletterAlreadySubscribedError),
+)
+async def verify_newsletter_subscription(
+    code: str = Body(embed=True, regex=VERIFICATION_CODE_REGEX, description="The code from the verification email"),
+    user: models.User = get_user(models.User.sessions, require_self_or_admin=True),
+) -> Any:
+    """
+    Verify a user's newsletter subscription.
+
+    To request a verification email, set `newsletter` to `true` via the `PATCH /users/{user_id}` endpoint.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
+
+    if user.newsletter:
+        raise NewsletterAlreadySubscribedError
+
+    if not await user.check_newsletter_code(code):
+        raise InvalidVerificationCodeError
+
+    user.newsletter = True
     return user.serialize
 
 

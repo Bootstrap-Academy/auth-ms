@@ -13,15 +13,22 @@ from api.utils.utc import utcfromtimestamp, utcnow
 
 
 @pytest.mark.parametrize(
-    "enabled,admin,password,mfa,verified,description,tags",
+    "enabled,admin,password,mfa,verified,description,tags,newsletter",
     [
-        (True, False, "asdf", False, True, None, []),
-        (False, True, None, True, False, "Hello World!", ["foo", "bar"]),
-        (True, True, None, False, True, None, ["a", "b", "c", "d", "e", "f"]),
+        (True, False, "asdf", False, True, None, [], True),
+        (False, True, None, True, False, "Hello World!", ["foo", "bar"], False),
+        (True, True, None, False, True, None, ["a", "b", "c", "d", "e", "f"], False),
     ],
 )
 async def test__serialize(
-    enabled: bool, admin: bool, password: str | None, mfa: bool, verified: bool, description: str, tags: list[str]
+    enabled: bool,
+    admin: bool,
+    password: str | None,
+    mfa: bool,
+    verified: bool,
+    description: str,
+    tags: list[str],
+    newsletter: bool,
 ) -> None:
     obj = User(
         id="user_id",
@@ -36,6 +43,7 @@ async def test__serialize(
         password=password,
         mfa_enabled=mfa,
         description=description,
+        newsletter=newsletter,
     )
     obj.tags = tags
 
@@ -53,6 +61,7 @@ async def test__serialize(
         "mfa_enabled": mfa,
         "description": description,
         "tags": tags,
+        "newsletter": newsletter,
         "avatar_url": "https://www.gravatar.com/avatar/4954756b2cdeccd47bc819726b270303",
     }
 

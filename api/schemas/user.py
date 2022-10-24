@@ -23,6 +23,7 @@ class User(BaseModel):
     mfa_enabled: bool = Field(description="Whether the user has enabled MFA")
     description: str | None = Field(description="Description of the user")
     tags: list[str] = Field(description="Tags for the user")
+    newsletter: bool = Field(description="Whether the user has subscribed to the newsletter")
     avatar_url: str | None = Field(description="URL of the user's avatar")
 
     Config = example(
@@ -39,6 +40,7 @@ class User(BaseModel):
         mfa_enabled=False,
         description="This is a test user",
         tags=["test", "foo", "bar"],
+        newsletter=True,
         avatar_url=None,
     )
 
@@ -73,6 +75,7 @@ class UpdateUser(BaseModel):
     admin: bool | None = Field(description="Change whether the user is an administrator")
     description: str | None = Field(max_length=1024, description="Change the user's description")
     tags: list[str] | None = Field(max_items=8, max_length=64, description="Change the user's tags")
+    newsletter: bool | None = Field(None, description="Whether the user wants to subscribe to the newsletter")
 
 
 class RequestPasswordReset(BaseModel):
