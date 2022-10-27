@@ -16,7 +16,14 @@ from ..logger import get_logger
 from ..redis import redis
 from ..services.gravatar import get_gravatar_url
 from ..settings import settings
-from ..utils.email import check_email_deliverability, generate_verification_code, send_email
+from ..utils.email import (
+    RESET_PASSWORD,
+    SUBSCRIBE_NEWSLETTER,
+    VERIFY_EMAIL,
+    check_email_deliverability,
+    generate_verification_code,
+    send_email,
+)
 from ..utils.jwt import decode_jwt
 from ..utils.passwords import hash_password, verify_password
 from ..utils.utc import utcnow
@@ -186,7 +193,7 @@ class User(Base):
         if not self.email_verification_code:
             raise ValueError("User already verified")
 
-        await send_email(self.email, "Verify your email", f"Your verification code: {self.email_verification_code}")
+        await VERIFY_EMAIL.send(self.email, code=self.email_verification_code)
 
     async def send_password_reset_email(self) -> None:
         if not self.email:
@@ -194,7 +201,7 @@ class User(Base):
 
         code = generate_verification_code()
         await redis.setex(f"password_reset:{self.id}", 3600, code)
-        await send_email(self.email, "Reset your password", f"Your password reset code: {code}")
+        await RESET_PASSWORD.send(self.email, code=code)
 
     async def check_password_reset_code(self, code: str) -> bool:
         value: str | None = await redis.get(key := f"password_reset:{self.id}")
@@ -210,7 +217,7 @@ class User(Base):
 
         code = generate_verification_code()
         await redis.setex(f"newsletter:{self.id}", 3600, code)
-        await send_email(self.email, "Subscribe to the newsletter", f"code: {code}")
+        await SUBSCRIBE_NEWSLETTER.send(self.email, code=code)
 
     async def check_newsletter_code(self, code: str) -> bool:
         value: str | None = await redis.get(key := f"newsletter:{self.id}")

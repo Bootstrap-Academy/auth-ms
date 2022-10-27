@@ -1,10 +1,14 @@
 import asyncio
 import random
 import string
-from email.message import EmailMessage
+from dataclasses import dataclass
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Any
 
 import aiosmtplib
 import email_validator
+from jinja2 import Environment, FileSystemLoader
 
 from .async_thread import run_in_thread
 from ..logger import get_logger
@@ -12,6 +16,24 @@ from ..settings import settings
 
 
 logger = get_logger(__name__)
+
+
+env = Environment(loader=FileSystemLoader("templates"), autoescape=True)
+
+
+@dataclass
+class Message:
+    title: str
+    template: str
+
+    async def send(self, recipient: str, *, reply_to: str | None = None, **kwargs: Any) -> None:
+        content = env.get_template(self.template).render(**kwargs)
+        await send_email(recipient, self.title, content, reply_to=reply_to)
+
+
+VERIFY_EMAIL = Message(title="Verify your email", template="verify_email.html")
+RESET_PASSWORD = Message(title="Reset your password", template="reset_password.html")
+SUBSCRIBE_NEWSLETTER = Message(title="Subscribe to the newsletter", template="subscribe_newsletter.html")
 
 
 @run_in_thread
@@ -23,22 +45,19 @@ def check_email_deliverability(email: str) -> bool:
     return True
 
 
-async def send_email(
-    recipient: str, title: str, body: str, content_type: str = "text/plain", *, reply_to: str | None = None
-) -> None:
+async def send_email(recipient: str, title: str, body: str, *, reply_to: str | None = None) -> None:
     if not await check_email_deliverability(recipient):
         raise ValueError("Invalid email address")
 
     logger.debug(f"Sending email to {recipient} ({title})")
 
-    message = EmailMessage()
+    message = MIMEMultipart()
     message["From"] = settings.smtp_from
     message["To"] = recipient
     message["Subject"] = title
     if reply_to:
         message["Reply-To"] = reply_to
-    message.set_type(content_type)
-    message.set_content(body)
+    message.attach(MIMEText(body, "html"))
 
     asyncio.create_task(
         aiosmtplib.send(
