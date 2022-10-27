@@ -66,9 +66,7 @@ def setup_app() -> None:
 
     if settings.sentry_dsn:
         logger.debug("initializing sentry")
-        setup_sentry(
-            app, settings.sentry_dsn, "Bootstrap Academy Backend: Auth Microservice", get_version().description
-        )
+        setup_sentry(app, settings.sentry_dsn, "auth-ms", get_version().description)
 
     if settings.debug:
         app.add_middleware(

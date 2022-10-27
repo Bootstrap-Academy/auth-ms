@@ -11,13 +11,14 @@ from api import logger
 from api.settings import settings
 
 
-async def test__setup_sentry(mocker: MockerFixture) -> None:
+async def test__setup_sentry(monkeypatch: MonkeyPatch, mocker: MockerFixture) -> None:
     ignore_logger_patch = mocker.patch("api.logger.ignore_logger")
     loggingintegration_patch = mocker.patch("api.logger.LoggingIntegration")
     sqlalchemyintegration_patch = mocker.patch("api.logger.SqlalchemyIntegration")
     aiohttpintegration_patch = mocker.patch("api.logger.AioHttpIntegration")
     logging_patch = mocker.patch("api.logger.logging")
     sentry_sdk_init_patch = mocker.patch("api.logger.sentry_sdk.init")
+    monkeypatch.setattr(settings, "sentry_environment", "foobar42")
 
     app, dsn, name, version = mock_list(4)
 
@@ -32,6 +33,7 @@ async def test__setup_sentry(mocker: MockerFixture) -> None:
         shutdown_timeout=5,
         integrations=[aiohttpintegration_patch(), sqlalchemyintegration_patch(), loggingintegration_patch()],
         release=f"{name}@{version}",
+        environment="foobar42",
     )
     ignore_logger_patch.assert_called_once_with("uvicorn.error")
 

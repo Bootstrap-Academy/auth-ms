@@ -25,6 +25,7 @@ def setup_sentry(app: FastAPI, dsn: str, name: str, version: str) -> None:
             LoggingIntegration(level=logging.DEBUG, event_level=logging.WARNING),
         ],
         release=f"{name}@{version}",
+        environment=settings.sentry_environment,
     )
     ignore_logger("uvicorn.error")
 
