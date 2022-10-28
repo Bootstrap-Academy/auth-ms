@@ -193,7 +193,11 @@ class User(Base):
         if not self.email_verification_code:
             raise ValueError("User already verified")
 
-        await VERIFY_EMAIL.send(self.email, code=self.email_verification_code)
+        await VERIFY_EMAIL.send(
+            self.email,
+            code=self.email_verification_code,
+            url=settings.frontend_base_url.rstrip("/") + "/auth/verify-account",
+        )
 
     async def send_password_reset_email(self) -> None:
         if not self.email:
@@ -201,7 +205,9 @@ class User(Base):
 
         code = generate_verification_code()
         await redis.setex(f"password_reset:{self.id}", 3600, code)
-        await RESET_PASSWORD.send(self.email, code=code)
+        await RESET_PASSWORD.send(
+            self.email, code=code, url=settings.frontend_base_url.rstrip("/") + "/auth/reset-password"
+        )
 
     async def check_password_reset_code(self, code: str) -> bool:
         value: str | None = await redis.get(key := f"password_reset:{self.id}")
@@ -217,7 +223,9 @@ class User(Base):
 
         code = generate_verification_code()
         await redis.setex(f"newsletter:{self.id}", 3600, code)
-        await SUBSCRIBE_NEWSLETTER.send(self.email, code=code)
+        await SUBSCRIBE_NEWSLETTER.send(
+            self.email, code=code, url=settings.frontend_base_url.rstrip("/") + "/account/newsletter"
+        )
 
     async def check_newsletter_code(self, code: str) -> bool:
         value: str | None = await redis.get(key := f"newsletter:{self.id}")

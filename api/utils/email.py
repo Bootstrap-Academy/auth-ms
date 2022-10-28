@@ -31,9 +31,9 @@ class Message:
         await send_email(recipient, self.title, content, reply_to=reply_to)
 
 
-VERIFY_EMAIL = Message(title="Verify your email", template="verify_email.html")
-RESET_PASSWORD = Message(title="Reset your password", template="reset_password.html")
-SUBSCRIBE_NEWSLETTER = Message(title="Subscribe to the newsletter", template="subscribe_newsletter.html")
+VERIFY_EMAIL = Message(title="Willkommen bei der Bootstrap Academy!", template="verify_email.html")
+RESET_PASSWORD = Message(title="Passwort zurücksetzen - Bootstrap Academy", template="reset_password.html")
+SUBSCRIBE_NEWSLETTER = Message(title="Newsletter abonnieren - Bootstrap Academy", template="subscribe_newsletter.html")
 
 
 @run_in_thread

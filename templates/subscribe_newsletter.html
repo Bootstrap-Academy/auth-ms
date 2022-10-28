@@ -1,5 +1,16 @@
-<html>
+<html lang="de">
 <body>
-<p>Your verification code: {{ code }}</p>
+<p>
+    Vielen Dank für dein Interesse an den neuesten Neuigkeiten der Bootstrap Academy!
+    Um dem Newsletter beizutreten, bestätige bitte deine Anmeldung mit diesem Link:
+</p>
+<p style="text-align: center">
+    <a href="{{ url }}?code={{ code }}">{{ url }}?code={{ code }}</a>
+</p>
+<p>Oder gib unter <a href="{{ url }}">{{ url }}</a> diesen Code ein:</p>
+<p style="text-align: center; font-family: monospace; font-size: 18px">
+    <b>{{ code }}</b>
+</p>
+<p>Dein Bootstrap-Academy-Team</p>
 </body>
 </html>
