@@ -58,6 +58,7 @@ class Settings(BaseSettings):
 
     recaptcha_sitekey: str | None = None
     recaptcha_secret: str | None = None
+    recaptcha_min_score: float | None = None
 
     admin_username: str = "admin"
     admin_email: str = "admin@bootstrap.academy"
