@@ -26,4 +26,4 @@ async def check_recaptcha(response: str) -> bool:
                 return False
             if (score := data.get("score")) is None:
                 return settings.recaptcha_min_score is None
-            return settings.recaptcha_min_score is None or score < settings.recaptcha_min_score
+            return settings.recaptcha_min_score is None or score >= settings.recaptcha_min_score
