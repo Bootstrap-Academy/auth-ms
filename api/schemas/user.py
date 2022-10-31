@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr, Field
 from ..utils.docs import example, get_example
 
 
-USERNAME_REGEX = r"^[a-zA-Z\d]{4,32}$"
+USERNAME_REGEX = r"^[a-zA-Z\d]{3,32}$"
 PASSWORD_REGEX = r"^((?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,})?$"  # noqa: S105
 VERIFICATION_CODE_REGEX = r"^([a-zA-Z\d]{4}-){3}[a-zA-Z\d]{4}$"
 MFA_CODE_REGEX = r"^\d{6}$"
@@ -54,7 +54,7 @@ class UsersResponse(BaseModel):
 
 class CreateUser(BaseModel):
     name: str = Field(regex=USERNAME_REGEX, description="Unique username")
-    display_name: str = Field(..., min_length=4, max_length=64, description="Full name of the user")
+    display_name: str = Field(..., min_length=3, max_length=64, description="Full name of the user")
     email: EmailStr = Field(..., description="Email address of the user")
     password: str | None = Field(regex=PASSWORD_REGEX, description="Password of the user")
     oauth_register_token: str | None = Field(description="OAuth registration token returned by `POST /sessions/oauth`")
@@ -65,7 +65,7 @@ class CreateUser(BaseModel):
 
 class UpdateUser(BaseModel):
     name: str | None = Field(regex=USERNAME_REGEX, description="Change the username")
-    display_name: str | None = Field(None, min_length=4, max_length=64, description="Change the user's full name")
+    display_name: str | None = Field(None, min_length=3, max_length=64, description="Change the user's full name")
     email: EmailStr | None = Field(None, description="Change the user's email address")
     email_verified: bool | None = Field(None, description="Change whether the user's email address is verified")
     password: str | None = Field(
