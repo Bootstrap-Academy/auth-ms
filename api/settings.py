@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     hash_memory_cost: int = 102400
     mfa_valid_window: int = 1
     login_fails_before_captcha: int = 3
+    min_name_change_interval: int = 30  # days
 
     recaptcha_sitekey: str | None = None
     recaptcha_secret: str | None = None

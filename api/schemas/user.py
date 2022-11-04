@@ -17,6 +17,7 @@ class User(BaseModel):
     email_verified: bool = Field(description="Whether the user has verified their email address")
     registration: float = Field(description="Timestamp of the user's registration")
     last_login: float | None = Field(description="Timestamp of the user's last successful login")
+    last_name_change: float = Field(description="Timestamp of the user's last name change")
     enabled: bool = Field(description="Whether the user is enabled")
     admin: bool = Field(description="Whether the user is an administrator")
     password: bool = Field(description="Whether the user has a password (if not, login is only possible via OAuth)")
@@ -34,6 +35,7 @@ class User(BaseModel):
         email_verified=True,
         registration=1615725447.182818,
         last_login=1615735459.274742,
+        last_name_change=1615725447.182818,
         enabled=True,
         admin=False,
         password=True,

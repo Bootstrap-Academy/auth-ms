@@ -1,6 +1,7 @@
 """Endpoints for user management"""
 
 import hashlib
+from datetime import timedelta
 from typing import Any, cast
 
 from fastapi import APIRouter, Body, Query, Request
@@ -48,6 +49,7 @@ from ..utils.docs import responses
 from ..utils.email import check_email_deliverability
 from ..utils.mfa import check_mfa_code
 from ..utils.recaptcha import check_recaptcha, recaptcha_enabled
+from ..utils.utc import utcnow
 
 
 router = APIRouter()
@@ -233,12 +235,15 @@ async def update_user(
     """
 
     if data.name is not None and data.name != user.name:
-        if not admin:
+        now = utcnow()
+        if not admin and now - user.last_name_change < timedelta(days=settings.min_name_change_interval):
             raise PermissionDeniedError
         if await db.exists(models.User.filter_by_name(data.name).where(models.User.id != user.id)):
             raise UserAlreadyExistsError
 
         user.name = data.name
+        if not admin:
+            user.last_name_change = now
 
     if data.display_name is not None and data.display_name != user.display_name:
         user.display_name = data.display_name

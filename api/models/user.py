@@ -47,6 +47,7 @@ class User(Base):
     password: Mapped[str | None] = Column(String(128), nullable=True)
     registration: Mapped[datetime] = Column(UTCDateTime)
     last_login: Mapped[datetime | None] = Column(UTCDateTime, nullable=True)
+    last_name_change: Mapped[datetime] = Column(UTCDateTime)
     enabled: Mapped[bool] = Column(Boolean, default=True)
     admin: Mapped[bool] = Column(Boolean, default=False)
     mfa_secret: Mapped[str | None] = Column(String(32), nullable=True)
@@ -89,6 +90,7 @@ class User(Base):
             "email_verified": self.email_verified,
             "registration": self.registration.timestamp(),
             "last_login": self.last_login.timestamp() if self.last_login else None,
+            "last_name_change": self.last_name_change.timestamp(),
             "enabled": self.enabled,
             "admin": self.admin,
             "password": bool(self.password),
@@ -120,6 +122,7 @@ class User(Base):
             password=await hash_password(password) if password else None,
             registration=utcnow(),
             last_login=None,
+            last_name_change=utcnow(),
             enabled=enabled,
             admin=admin,
             mfa_secret=None,
