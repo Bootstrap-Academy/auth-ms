@@ -56,6 +56,14 @@ class User(Base):
     description: Mapped[str | None] = Column(String(1024), nullable=True)
     _tags: Mapped[str] = Column(String(550))
     newsletter: Mapped[bool] = Column(Boolean)
+    business: Mapped[bool | None] = Column(Boolean, nullable=True)
+    first_name: Mapped[str | None] = Column(String(128), nullable=True)
+    last_name: Mapped[str | None] = Column(String(128), nullable=True)
+    street: Mapped[str | None] = Column(String(256), nullable=True)
+    zip_code: Mapped[str | None] = Column(String(16), nullable=True)
+    city: Mapped[str | None] = Column(String(64), nullable=True)
+    country: Mapped[str | None] = Column(String(64), nullable=True)
+    vat_id: Mapped[str | None] = Column(String(64), nullable=True)
     sessions: list[Session] = relationship("Session", back_populates="user", cascade="all, delete")
     oauth_connections: list[OAuthUserConnection] = relationship(
         "OAuthUserConnection", back_populates="user", cascade="all, delete"
@@ -82,6 +90,15 @@ class User(Base):
 
     @property
     def serialize(self) -> dict[str, Any]:
+        can_receive_coins = None not in [
+            self.business,
+            self.first_name,
+            self.last_name,
+            self.street,
+            self.zip_code,
+            self.city,
+            self.country,
+        ] and (self.business is not True or self.vat_id is not None)
         return {
             "id": self.id,
             "name": self.name,
@@ -98,6 +115,16 @@ class User(Base):
             "description": self.description,
             "tags": self.tags,
             "newsletter": self.newsletter,
+            "business": self.business,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "street": self.street,
+            "zip_code": self.zip_code,
+            "city": self.city,
+            "country": self.country,
+            "vat_id": self.vat_id,
+            "can_buy_coins": can_receive_coins or (self.business is False and self.country is not None),
+            "can_receive_coins": can_receive_coins,
             "avatar_url": get_gravatar_url(self.email) if self.email else None,
         }
 

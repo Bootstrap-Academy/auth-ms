@@ -25,6 +25,16 @@ class User(BaseModel):
     description: str | None = Field(description="Description of the user")
     tags: list[str] = Field(description="Tags for the user")
     newsletter: bool = Field(description="Whether the user has subscribed to the newsletter")
+    business: bool | None = Field(description="Whether the user is a business instead of a private person")
+    first_name: str | None = Field(description="First name of the user")
+    last_name: str | None = Field(description="Last name of the user")
+    street: str | None = Field(description="Street of the user address")
+    zip_code: str | None = Field(description="Zip code of the user address")
+    city: str | None = Field(description="City of the user address")
+    country: str | None = Field(description="Country of the user")
+    vat_id: str | None = Field(description="Vat ID of the user")
+    can_buy_coins: bool = Field(description="Whether the user can buy coins")
+    can_receive_coins: bool = Field(description="Whether the user can receive coins")
     avatar_url: str | None = Field(description="URL of the user's avatar")
 
     Config = example(
@@ -78,6 +88,14 @@ class UpdateUser(BaseModel):
     description: str | None = Field(max_length=1024, description="Change the user's description")
     tags: list[str] | None = Field(max_items=8, max_length=64, description="Change the user's tags")
     newsletter: bool | None = Field(None, description="Whether the user wants to subscribe to the newsletter")
+    business: bool | None = Field(description="Whether the user is a business instead of a private person")
+    first_name: str | None = Field(max_length=128, description="First name of the user")
+    last_name: str | None = Field(max_length=128, description="Last name of the user")
+    street: str | None = Field(max_length=256, description="Street of the user address")
+    zip_code: str | None = Field(max_length=16, description="Zip code of the user address")
+    city: str | None = Field(max_length=64, description="City of the user address")
+    country: str | None = Field(max_length=64, description="Country of the user")
+    vat_id: str | None = Field(max_length=64, description="Vat ID of the user")
 
 
 class RequestPasswordReset(BaseModel):

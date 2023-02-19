@@ -298,6 +298,30 @@ async def update_user(
         else:
             user.newsletter = data.newsletter
 
+    if data.business is not None and data.business != user.business:
+        user.business = data.business
+
+    if data.first_name is not None and data.first_name != user.first_name:
+        user.first_name = data.first_name
+
+    if data.last_name is not None and data.last_name != user.last_name:
+        user.last_name = data.last_name
+
+    if data.street is not None and data.street != user.street:
+        user.street = data.street
+
+    if data.zip_code is not None and data.zip_code != user.zip_code:
+        user.zip_code = data.zip_code
+
+    if data.city is not None and data.city != user.city:
+        user.city = data.city
+
+    if data.country is not None and data.country != user.country:
+        user.country = data.country
+
+    if data.vat_id is not None and data.vat_id != user.vat_id:
+        user.vat_id = data.vat_id
+
     return user.serialize
 
 
