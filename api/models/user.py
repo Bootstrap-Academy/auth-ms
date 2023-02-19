@@ -79,7 +79,7 @@ class User(Base):
 
     @property
     def email_verified(self) -> bool:
-        return self.email_verification_code is None
+        return self.email is not None and self.email_verification_code is None
 
     @email_verified.setter
     def email_verified(self, value: bool) -> None:
@@ -90,15 +90,12 @@ class User(Base):
 
     @property
     def serialize(self) -> dict[str, Any]:
-        can_receive_coins = None not in [
-            self.business,
-            self.first_name,
-            self.last_name,
-            self.street,
-            self.zip_code,
-            self.city,
-            self.country,
-        ] and (self.business is not True or self.vat_id is not None)
+        can_receive_coins = (
+            self.email_verified
+            and None
+            not in [self.business, self.first_name, self.last_name, self.street, self.zip_code, self.city, self.country]
+            and (self.business is not True or self.vat_id is not None)
+        )
         return {
             "id": self.id,
             "name": self.name,
@@ -123,7 +120,8 @@ class User(Base):
             "city": self.city,
             "country": self.country,
             "vat_id": self.vat_id,
-            "can_buy_coins": can_receive_coins or (self.business is False and self.country is not None),
+            "can_buy_coins": can_receive_coins
+            or (self.business is False and self.country is not None and self.email_verified),
             "can_receive_coins": can_receive_coins,
             "avatar_url": get_gravatar_url(self.email) if self.email else None,
         }
