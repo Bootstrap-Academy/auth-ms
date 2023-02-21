@@ -46,6 +46,8 @@ class Settings(BaseSettings):
 
     jwt_secret: str = secrets.token_urlsafe(64)
 
+    shop_url: str = ""
+
     internal_jwt_ttl: int = 10
 
     access_token_ttl: int = 300

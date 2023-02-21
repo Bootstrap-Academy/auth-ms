@@ -16,7 +16,7 @@ class InternalServiceError(Exception):
 
 
 class InternalService(Enum):
-    # SERVICE_XYZ = settings.service_xyz_url
+    SHOP = settings.shop_url
 
     def _get_token(self) -> str:
         return encode_jwt({"aud": self.name.lower()}, timedelta(seconds=settings.internal_jwt_ttl))

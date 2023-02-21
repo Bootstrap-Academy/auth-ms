@@ -44,6 +44,7 @@ from ..schemas.user import (
     User,
     UsersResponse,
 )
+from ..services.shop import release_coins
 from ..settings import settings
 from ..utils.docs import responses
 from ..utils.email import check_email_deliverability
@@ -298,29 +299,41 @@ async def update_user(
         else:
             user.newsletter = data.newsletter
 
+    coin_info_updated = False
     if data.business is not None and data.business != user.business:
         user.business = data.business
+        coin_info_updated = True
 
     if data.first_name is not None and data.first_name != user.first_name:
         user.first_name = data.first_name
+        coin_info_updated = True
 
     if data.last_name is not None and data.last_name != user.last_name:
         user.last_name = data.last_name
+        coin_info_updated = True
 
     if data.street is not None and data.street != user.street:
         user.street = data.street
+        coin_info_updated = True
 
     if data.zip_code is not None and data.zip_code != user.zip_code:
         user.zip_code = data.zip_code
+        coin_info_updated = True
 
     if data.city is not None and data.city != user.city:
         user.city = data.city
+        coin_info_updated = True
 
     if data.country is not None and data.country != user.country:
         user.country = data.country
+        coin_info_updated = True
 
     if data.vat_id is not None and data.vat_id != user.vat_id:
         user.vat_id = data.vat_id
+        coin_info_updated = True
+
+    if user.can_receive_coins and coin_info_updated:
+        await release_coins(user.id)
 
     return user.serialize
 
