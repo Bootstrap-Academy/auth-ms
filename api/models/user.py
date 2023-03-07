@@ -22,7 +22,6 @@ from ..utils.email import (
     VERIFY_EMAIL,
     check_email_deliverability,
     generate_verification_code,
-    send_email,
 )
 from ..utils.jwt import decode_jwt
 from ..utils.passwords import hash_password, verify_password

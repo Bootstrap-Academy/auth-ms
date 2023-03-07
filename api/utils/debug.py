@@ -31,7 +31,7 @@ def _check_response_schema(method: str, route: APIRoute, status_code: int, body:
             pydantic.parse_raw_as(response_schema, body)
         except Exception as e:
             logger.error(f"[{method} {route.path}] response schema validation failed ({status_code}):\n{e}")
-    elif not json.loads(body) in (
+    elif json.loads(body) not in (
         v.get("value") for v in response.get("content", {}).get("application/json", {}).get("examples", {}).values()
     ):
         logger.error(f"[{method} {route.path}] response schema validation failed ({status_code})")

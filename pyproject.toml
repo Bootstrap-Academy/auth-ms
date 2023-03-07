@@ -51,7 +51,8 @@ isort = "isort ."
 black = "black ."
 format = ["isort", "black"]
 mypy = "mypy ."
-lint = ["format", "mypy", "flake8"]
+ruff = "ruff . --line-length 120"
+lint = ["format", "ruff", "mypy", "flake8"]
 test = "pytest -v tests"
 pre-commit = ["lint", "coverage"]
 alembic = { cmd = "alembic", envfile = ".env" }
