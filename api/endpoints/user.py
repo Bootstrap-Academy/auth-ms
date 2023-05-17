@@ -19,6 +19,7 @@ from ..exceptions.user import (
     EmailAlreadyVerifiedError,
     InvalidCodeError,
     InvalidEmailError,
+    InvalidVatIdError,
     InvalidVerificationCodeError,
     MFAAlreadyEnabledError,
     MFANotEnabledError,
@@ -51,6 +52,7 @@ from ..utils.email import check_email_deliverability
 from ..utils.mfa import check_mfa_code
 from ..utils.recaptcha import check_recaptcha, recaptcha_enabled
 from ..utils.utc import utcnow
+from api.utils.vat import check_vat_id
 
 
 router = APIRouter()
@@ -209,6 +211,7 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
         EmailAlreadyExistsError,
         InvalidEmailError,
         CannotDeleteLastLoginMethodError,
+        InvalidVatIdError,
     ),
 )
 async def update_user(
@@ -329,6 +332,9 @@ async def update_user(
         coin_info_updated = True
 
     if data.vat_id is not None and data.vat_id != user.vat_id:
+        if not await check_vat_id(data.vat_id):
+            raise InvalidVatIdError
+
         user.vat_id = data.vat_id
         coin_info_updated = True
 

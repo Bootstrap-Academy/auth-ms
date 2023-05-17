@@ -109,3 +109,9 @@ class NewsletterAlreadySubscribedError(APIException):
     status_code = status.HTTP_409_CONFLICT
     detail = "Newsletter already subscribed"
     description = "The newsletter has already been subscribed to."
+
+
+class InvalidVatIdError(APIException):
+    status_code = status.HTTP_404_NOT_FOUND
+    detail = "Invalid VAT ID"
+    description = "The vat id is invalid."
