@@ -331,7 +331,9 @@ async def update_user(
         user.country = data.country
         coin_info_updated = True
 
-    if data.vat_id is not None and data.vat_id != user.vat_id:
+    if not user.business:
+        user.vat_id = None
+    elif data.vat_id is not None and data.vat_id != user.vat_id:
         if not await check_vat_id(data.vat_id):
             raise InvalidVatIdError
 
