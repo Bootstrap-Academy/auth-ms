@@ -218,6 +218,42 @@ async def login_challenges(request: Request, code: str = Body(embed=True)) -> An
     }
 
 
+@router.get("/sessions/edumatch/login_url", responses=user_responses(str))
+async def get_edumatch_login_url(session: models.Session = user_auth) -> Any:
+    """
+    Get a login URL for the edumatch website.
+
+    *Requirements:* **USER**
+    """
+
+    code = token_urlsafe(48)
+    await redis.setex(f"edumatch_login_code:{code}", 60, session.user_id)
+    return f"{settings.edumatch_login_url}?code={code}"
+
+
+@router.post("/sessions/edumatch", responses=responses(LoginResponse, InvalidCodeError))
+async def login_edumatch(request: Request, code: str = Body(embed=True)) -> Any:
+    """Create a new session for the edumatch website."""
+
+    user_id = await redis.get(key := f"edumatch_login_code:{code}")
+    if not user_id:
+        raise InvalidCodeError
+
+    await redis.delete(key)
+
+    user = await db.get(models.User, id=user_id)
+    if not user:
+        raise InvalidCodeError
+
+    session, access_token, refresh_token = await user.create_session(request.headers.get("User-agent", "")[:256])
+    return {
+        "user": user.serialize,
+        "session": session.serialize,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
+
+
 @router.post(
     "/sessions/{user_id}", dependencies=[admin_auth], responses=admin_responses(LoginResponse, UserNotFoundError)
 )

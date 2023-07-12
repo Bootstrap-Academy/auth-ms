@@ -69,6 +69,7 @@ class Settings(BaseSettings):
 
     frontend_base_url: str = "https://bootstrap.academy"
     challenges_login_url: str = "https://the-morpheus.cc/login"
+    edumatch_login_url: str = "http://localhost:8000/login"  # TODO
 
     smtp_host: str = ""
     smtp_port: int = 587
