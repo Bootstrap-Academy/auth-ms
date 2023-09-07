@@ -2,7 +2,7 @@
 
 import hashlib
 from datetime import timedelta
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter, Body, Query, Request
 from pyotp import random_base32
@@ -354,7 +354,7 @@ async def request_verification_email(user: models.User = get_user(require_self_o
     """
     Request a verification email.
 
-    This will send an email to the user's email address with a code for the `PUT /users/{user_id}/email` endpoint to
+    This will send an email to the user's email address with a code for the `PUT /users/me/email` endpoint to
     verify their email address.
 
     *Requirements:* **SELF** or **ADMIN**
@@ -370,13 +370,9 @@ async def request_verification_email(user: models.User = get_user(require_self_o
     return True
 
 
-@router.put(
-    "/users/{user_id}/email",
-    responses=admin_responses(User, UserNotFoundError, EmailAlreadyVerifiedError, InvalidVerificationCodeError),
-)
+@router.put("/users/me/email", responses=admin_responses(bool, InvalidVerificationCodeError))
 async def verify_email(
-    code: str = Body(embed=True, regex=VERIFICATION_CODE_REGEX, description="The code from the verification email"),
-    user: models.User = get_user(models.User.sessions, require_self_or_admin=True),
+    code: str = Body(embed=True, regex=VERIFICATION_CODE_REGEX, description="The code from the verification email")
 ) -> Any:
     """
     Verify a user's email address.
@@ -386,15 +382,13 @@ async def verify_email(
     *Requirements:* **SELF** or **ADMIN**
     """
 
-    if user.email_verified:
-        raise EmailAlreadyVerifiedError
-
-    if code.lower() != cast(str, user.email_verification_code).lower():
+    user: models.User | None = await db.first(models.User.filter_by_verification_code(code, models.User.sessions))
+    if not user:
         raise InvalidVerificationCodeError
 
     user.email_verified = True
     await user.invalidate_access_tokens()
-    return user.serialize
+    return True
 
 
 @router.put(

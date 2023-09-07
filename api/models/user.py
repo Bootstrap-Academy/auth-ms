@@ -42,7 +42,7 @@ class User(Base):
     name: Mapped[str] = Column(String(32), unique=True)
     display_name: Mapped[str] = Column(String(64))
     email: Mapped[str | None] = Column(String(254), unique=True)
-    email_verification_code: Mapped[str | None] = Column(String(32), nullable=True)
+    email_verification_code: Mapped[str | None] = Column(String(32), nullable=True, unique=True)
     password: Mapped[str | None] = Column(String(128), nullable=True)
     registration: Mapped[datetime] = Column(UTCDateTime)
     last_login: Mapped[datetime | None] = Column(UTCDateTime, nullable=True)
@@ -172,6 +172,10 @@ class User(Base):
     @staticmethod
     def filter_by_email(email: str) -> Select:
         return select(User).where(func.lower(User.email) == email.lower())
+
+    @staticmethod
+    def filter_by_verification_code(code: str, *args: Any) -> Select:
+        return select(User, *args).where(func.lower(User.email_verification_code) == code.lower())
 
     @staticmethod
     def login_filter(name_or_email: str) -> Select:
