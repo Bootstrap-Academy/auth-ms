@@ -115,3 +115,19 @@ class InvalidVatIdError(APIException):
     status_code = status.HTTP_404_NOT_FOUND
     detail = "Invalid VAT ID"
     description = "The vat id is invalid."
+
+
+class AvatarNotFoundError(APIException):
+    status_code = status.HTTP_404_NOT_FOUND
+    detail = "No avatar found"
+    description = "No avatar found for this user"
+
+class InvalidAvatarTypeError(APIException):
+    status_code = status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+    detail = "Unsupported media type"
+    description = "This media type isn't supported for avatars"
+
+class AvatarSizeTooLarge(APIException):
+    status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+    detail = "Image is too large"
+    description = "The image's size is too large for the avatar"

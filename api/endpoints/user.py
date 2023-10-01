@@ -2,9 +2,10 @@
 
 import hashlib
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Body, Query, Request
+from fastapi import APIRouter, Body, Query, Request, FileResponse, UploadFile
 from pyotp import random_base32
 from sqlalchemy import asc, func, or_
 
@@ -32,6 +33,9 @@ from ..exceptions.user import (
     RegistrationDisabledError,
     UserAlreadyExistsError,
     UserNotFoundError,
+    AvatarNotFoundError,
+    InvalidAvatarTypeError,
+    AvatarSizeTooLarge
 )
 from ..redis import redis
 from ..schemas.session import LoginResponse
@@ -506,6 +510,67 @@ async def delete_user(
 
     await user.logout()
     await db.delete(user)
+    return True
+
+
+@router.get("/users/{user_id}/avatar", responses=user_responses(FileResponse, UserNotFoundError, AvatarNotFoundError))
+async def get_user_avatar(user: models.User = get_user(require_self_or_admin=True)) -> Any:
+    """
+        Get the user's avatar.
+
+        This endpoint retrieves and returns the user's avatar as an image.
+
+        *Requirements:* **SELF** or **ADMIN**
+    """
+
+    # Assuming avatars are stored in a directory named 'avatars' in the application's root.
+    avatar_path = None
+    for ext in [".png", ".jpg", ".jpeg"]:
+        potential_avatar_path = Path(f"avatars/{user.id}{ext}")
+        if potential_avatar_path.is_file():
+            avatar_path = potential_avatar_path
+            break
+    if not avatar_path:
+        return AvatarNotFoundError
+
+    return FileResponse(avatar_path, media_type=f"image/{avatar_path.suffix.lstrip('.').lower()}")
+
+
+@router.post("/users/{user_id}/avatar", responses=user_responses(bool, UserNotFoundError, InvalidAvatarTypeError, AvatarSizeTooLarge, AvatarNotFoundError))
+async def upload_user_avatar(avatar_file: UploadFile, user: models.User = get_user(require_self_or_admin=True)) -> Any:
+    """
+        Uploads the user's image as avatar
+
+        *Requirements:* **SELF** or **ADMIN**
+    """
+
+    if not avatar_file:
+        return AvatarNotFoundError
+
+    # Check file for size and extension
+    allowed_extensions = (".png", ".jpg", ".jpeg")
+    max_file_size_bytes = 5 * 1024 * 1024  # 5 MB limit
+
+    if not avatar_file.filename.endswith(allowed_extensions):
+        return InvalidAvatarTypeError
+
+    if avatar_file.size > max_file_size_bytes:
+        return AvatarSizeTooLarge
+
+    # Save the uploaded avatar file
+    avatar_path = Path(f"avatars/{user.id}{Path(avatar_file.filename).suffix}")
+
+    try:
+        with avatar_path.open("wb") as avatar_file_dst:
+            avatar_file_dst.write(avatar_file.file.read())
+
+        # Check if user already had a saved avatar
+        for ext in [".png", ".jpg", ".jpeg"]:
+            potential_avatar_path = Path(f"avatars/{user.id}{ext}")
+            if potential_avatar_path.is_file() and potential_avatar_path != avatar_path:
+                potential_avatar_path.unlink()
+    except (FileNotFoundError, PermissionError, OSError):
+        return False
     return True
 
 
