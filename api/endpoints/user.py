@@ -573,6 +573,21 @@ async def upload_user_avatar(avatar_file: UploadFile, user: models.User = get_us
         return False
     return True
 
+@router.delete("/users/{user_id}/avatar", responses=user_responses(bool, UserNotFoundError))
+async def delete_avatar(user: models.User = get_user(require_self_or_admin=True)) -> Any:
+    """
+            Deletes the user's avatar image
+
+            *Requirements:* **SELF** or **ADMIN**
+        """
+    try:
+        for ext in [".png", ".jpg", ".jpeg"]:
+            potential_avatar_path = Path(f"avatars/{user.id}{ext}")
+            if potential_avatar_path.is_file():
+                potential_avatar_path.unlink()
+    except (PermissionError, OSError):
+        return False
+    return True
 
 @router.post("/password_reset", responses=responses(bool, RecaptchaError, InvalidEmailError))
 async def request_password_reset(data: RequestPasswordReset) -> Any:
