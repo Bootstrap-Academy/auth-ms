@@ -523,10 +523,9 @@ async def get_user_avatar(user: models.User = get_user(require_self_or_admin=Tru
         *Requirements:* **SELF** or **ADMIN**
     """
 
-    # Assuming avatars are stored in a directory named 'avatars' in the application's root.
     avatar_path = None
-    for ext in [".png", ".jpg", ".jpeg"]:
-        potential_avatar_path = Path(f"avatars/{user.id}{ext}")
+    for ext in [".png", ".jpg"]:
+        potential_avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
         if potential_avatar_path.is_file():
             avatar_path = potential_avatar_path
             break
@@ -548,24 +547,27 @@ async def upload_user_avatar(avatar_file: UploadFile, user: models.User = get_us
         return AvatarNotFoundError
 
     # Check file for size and extension
-    allowed_extensions = (".png", ".jpg", ".jpeg")
-    max_file_size_bytes = 5 * 1024 * 1024  # 5 MB limit
+    allowed_extensions = [".png", ".jpg"]
 
-    if not avatar_file.filename.endswith(allowed_extensions):
+    ext = os.path.splitext(avatar_file.filename)[1]
+    if not ext:
         return InvalidAvatarTypeError
 
-    if avatar_file.size > max_file_size_bytes:
+    if not ext in allowed_extensions:
+        return InvalidAvatarTypeError
+
+    if avatar_file.size > settings.avatar_max_size:
         return AvatarSizeTooLarge
 
     # Save the uploaded avatar file
-    avatar_path = Path(f"avatars/{user.id}{Path(avatar_file.filename).suffix}")
+    avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
 
     try:
         with avatar_path.open("wb") as avatar_file_dst:
             avatar_file_dst.write(avatar_file.file.read())
 
         # Check if user already had a saved avatar
-        for ext in [".png", ".jpg", ".jpeg"]:
+        for ext in [".png", ".jpg"]:
             potential_avatar_path = Path(f"avatars/{user.id}{ext}")
             if potential_avatar_path.is_file() and potential_avatar_path != avatar_path:
                 potential_avatar_path.unlink()
@@ -581,8 +583,8 @@ async def delete_avatar(user: models.User = get_user(require_self_or_admin=True)
             *Requirements:* **SELF** or **ADMIN**
         """
     try:
-        for ext in [".png", ".jpg", ".jpeg"]:
-            potential_avatar_path = Path(f"avatars/{user.id}{ext}")
+        for ext in [".png", ".jpg"]:
+            potential_avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
             if potential_avatar_path.is_file():
                 potential_avatar_path.unlink()
     except (PermissionError, OSError):
