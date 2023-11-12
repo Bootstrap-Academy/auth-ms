@@ -523,16 +523,11 @@ async def get_user_avatar(user: models.User = get_user(require_self_or_admin=Tru
         *Requirements:* **SELF** or **ADMIN**
     """
 
-    avatar_path = None
     for ext in [".png", ".jpg"]:
-        potential_avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
-        if potential_avatar_path.is_file():
-            avatar_path = potential_avatar_path
-            break
-    if not avatar_path:
+        if Path(f"{settings.avatar_path}/{user.id}{ext}").is_file():
+            return FileResponse(potential_avatar_path, media_type=f"image/{ext[1:]}")
+    else:
         raise AvatarNotFoundError
-
-    return FileResponse(avatar_path, media_type=f"image/{avatar_path.suffix.lstrip('.').lower()}")
 
 
 @router.post("/users/{user_id}/avatar", responses=user_responses(bool, UserNotFoundError, InvalidAvatarTypeError, AvatarSizeTooLarge, AvatarNotFoundError))
@@ -549,7 +544,7 @@ async def upload_user_avatar(avatar_file: UploadFile, user: models.User = get_us
     # Check file for size and extension
     allowed_extensions = [".png", ".jpg"]
 
-    ext = os.path.splitext(avatar_file.filename)[1]
+    ext = os.path.splitext(avatar_file.filename)[-1]
     if not ext:
         return InvalidAvatarTypeError
 
@@ -562,17 +557,14 @@ async def upload_user_avatar(avatar_file: UploadFile, user: models.User = get_us
     # Save the uploaded avatar file
     avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
 
-    try:
-        with avatar_path.open("wb") as avatar_file_dst:
-            avatar_file_dst.write(avatar_file.file.read())
+    with avatar_path.open("wb") as avatar_file_dst:
+        avatar_file_dst.write(avatar_file.file.read())
 
-        # Check if user already had a saved avatar
-        for ext in [".png", ".jpg"]:
-            potential_avatar_path = Path(f"avatars/{user.id}{ext}")
-            if potential_avatar_path.is_file() and potential_avatar_path != avatar_path:
-                potential_avatar_path.unlink()
-    except (FileNotFoundError, PermissionError, OSError):
-        return False
+    # Check if user already had a saved avatar
+    for ext in [".png", ".jpg"]:
+        potential_avatar_path = Path(f"avatars/{user.id}{ext}")
+        if potential_avatar_path.is_file() and potential_avatar_path != avatar_path:
+            potential_avatar_path.unlink()
     return True
 
 @router.delete("/users/{user_id}/avatar", responses=user_responses(bool, UserNotFoundError))
@@ -581,14 +573,12 @@ async def delete_avatar(user: models.User = get_user(require_self_or_admin=True)
             Deletes the user's avatar image
 
             *Requirements:* **SELF** or **ADMIN**
-        """
-    try:
-        for ext in [".png", ".jpg"]:
-            potential_avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
-            if potential_avatar_path.is_file():
-                potential_avatar_path.unlink()
-    except (PermissionError, OSError):
-        return False
+     """
+
+    for ext in [".png", ".jpg"]:
+        potential_avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
+        if potential_avatar_path.is_file():
+            potential_avatar_path.unlink()
     return True
 
 @router.post("/password_reset", responses=responses(bool, RecaptchaError, InvalidEmailError))
