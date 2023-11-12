@@ -530,7 +530,7 @@ async def get_user_avatar(user: models.User = get_user(require_self_or_admin=Tru
             avatar_path = potential_avatar_path
             break
     if not avatar_path:
-        return AvatarNotFoundError
+        raise AvatarNotFoundError
 
     return FileResponse(avatar_path, media_type=f"image/{avatar_path.suffix.lstrip('.').lower()}")
 
