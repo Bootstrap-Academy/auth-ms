@@ -96,7 +96,7 @@ default = true
 shell = """
 set -ex
 poetry install --sync
-if ! [[ -e .env ]]; then cp fastapi.env .env; fi
+if ! [[ -e .env ]]; then cp dev.env .env; fi
 """
 interpreter = "bash"
 
