@@ -1,0 +1,88 @@
+name: check
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+permissions:
+  contents: read
+
+jobs:
+  fmt:
+    name: fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Cache virtual environment
+        uses: actions/cache@v3
+        with:
+          path: |
+            .venv
+            ~/.cache/pip
+            ~/.cache/pypoetry
+          key: ${{ runner.os }}-venv-${{ hashFiles('poetry.lock') }}
+      - name: Setup poetry
+        run: |
+          pip install poetry poethepoet
+          poetry install -n --no-root --sync
+      - run: poe black --diff --check && poe isort --diff --check
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Cache virtual environment
+        uses: actions/cache@v3
+        with:
+          path: |
+            .venv
+            ~/.cache/pip
+            ~/.cache/pypoetry
+          key: ${{ runner.os }}-venv-${{ hashFiles('poetry.lock') }}
+      - name: Setup poetry
+        run: |
+          pip install poetry poethepoet
+          poetry install -n --no-root --sync
+      - run: poe ruff && poe flake8
+
+  mypy:
+    name: mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Cache virtual environment
+        uses: actions/cache@v3
+        with:
+          path: |
+            .venv
+            ~/.cache/pip
+            ~/.cache/pypoetry
+          key: ${{ runner.os }}-venv-${{ hashFiles('poetry.lock') }}
+      - name: Setup poetry
+        run: |
+          pip install poetry poethepoet
+          poetry install -n --no-root --sync
+      - run: poe mypy
