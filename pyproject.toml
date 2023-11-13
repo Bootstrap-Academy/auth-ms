@@ -9,11 +9,10 @@ repository = "https://github.com/Bootstrap-Academy/auth-ms"
 packages = [{ include = "api" }]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 fastapi = "^0.84.0"
 uvicorn = "^0.18.3"
 aiohttp = "^3.8.3"
-aioredis = "^2.0.1"
 SQLAlchemy = "^1.4.42"
 aiomysql = "^0.1.1"
 asyncpg = "^0.26.0"
@@ -29,10 +28,11 @@ jq = "^1.3.0"
 aiosmtplib = "^1.1.7"
 email-validator = "^1.3.0"
 Jinja2 = "^3.1.2"
+redis = "^5.0.1"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^4.0.1"
-isort = "^5.10.1"
+isort = "^5.12.0"
 black = "^22.8.0"
 wemake-python-styleguide = "^0.16.1"
 mypy = "^0.971"
@@ -105,13 +105,13 @@ git submodule foreach 'poe setup'
 interpreter = "bash"
 
 [tool.black]
-target-version = ["py310"]
+target-version = ["py311"]
 line-length = 120
 skip-magic-trailing-comma = true
 
 [tool.isort]
 profile = "black"
-py_version = 310
+py_version = 311
 line_length = 120
 lines_after_imports = 2
 reverse_relative = true
