@@ -97,7 +97,6 @@ shell = """
 set -ex
 poetry install --sync
 if ! [[ -e .env ]]; then cp fastapi.env .env; fi
-./pre-commit.sh install
 """
 interpreter = "bash"
 
