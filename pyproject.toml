@@ -43,6 +43,7 @@ pytest-asyncio = "^0.19.0"
 pytest-mock = "^3.8.2"
 aiosqlite = "^0.17.0"
 rich = "^12.5.1"
+ruff = "^0.1.5"
 
 [tool.poe.tasks]
 api = { script = "api.main:main", envfile = ".env" }
