@@ -98,9 +98,6 @@ set -ex
 poetry install --sync
 if ! [[ -e .env ]]; then cp fastapi.env .env; fi
 ./pre-commit.sh install
-unset VIRTUAL_ENV
-git submodule update --init
-git submodule foreach 'poe setup'
 """
 interpreter = "bash"
 
