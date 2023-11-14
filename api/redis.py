@@ -1,6 +1,6 @@
 from typing import Callable, cast
 
-from aioredis import Redis, from_url
+from redis.asyncio import Redis, from_url
 
 from .logger import get_logger
 from .settings import settings

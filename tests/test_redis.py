@@ -1,5 +1,5 @@
 from _pytest.monkeypatch import MonkeyPatch
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from ._utils import import_module
 from api import redis

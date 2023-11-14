@@ -1,47 +1,58 @@
-<p>
+# Bootstrap Academy Auth Microservice
+The official auth microservice of [Bootstrap Academy](https://bootstrap.academy/).
 
-  [![CI](https://github.com/Bootstrap-Academy/auth-ms/actions/workflows/ci.yml/badge.svg)](https://github.com/Bootstrap-Academy/auth-ms/actions/workflows/ci.yml)
-  [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+If you would like to submit a bug report or feature request, or are looking for general information about the project or the publicly available instances, please refer to the [Bootstrap-Academy repository](https://github.com/Bootstrap-Academy/Bootstrap-Academy).
 
-</p>
+## Development Setup
+1. Install [Python 3.11](https://python.org/), [Poetry](https://python-poetry.org/) and [poethepoet](https://pypi.org/project/poethepoet/).
+2. Clone this repository and `cd` into it.
+3. Run `poe setup` to install the dependencies.
+4. Start a [PostgreSQL](https://www.postgresql.org/) database, for example using [Docker](https://www.docker.com/) or [Podman](https://podman.io/):
+    ```bash
+    podman run -d --rm \
+        --name postgres \
+        -p 127.0.0.1:5432:5432 \
+        -e POSTGRES_HOST_AUTH_METHOD=trust \
+        postgres:alpine
+    ```
+5. Create the `academy-auth` database:
+    ```bash
+    podman exec postgres \
+        psql -U postgres \
+        -c 'create database "academy-auth"'
+    ```
+6. Start a [Redis](https://redis.io/) instance, for example using [Docker](https://www.docker.com/) or [Podman](https://podman.io/):
+    ```bash
+    podman run -d --rm \
+        --name redis \
+        -p 127.0.0.1:6379:6379 \
+        redis:alpine
+    ```
+7. Run `poe migrate` to run the database migrations.
+8. Run `poe api` to start the microservice. You can find the automatically generated swagger documentation on http://localhost:8000/docs.
 
-# auth-ms
-
-Bootstrap Academy Auth Microservice
-
-## Development
-
-### Prerequisites
-- [Python 3.10](https://python.org/)
-- [Poetry](https://python-poetry.org/) + [poethepoet](https://pypi.org/project/poethepoet/)
-- [Git](https://git-scm.com/)
-- [Docker](https://www.docker.com/) + [docker-compose](https://docs.docker.com/compose/) (recommended)
-- [PyCharm Community/Professional](https://www.jetbrains.com/pycharm/) (recommended)
-
-### Clone the repository
-
-#### SSH (recommended)
+## Poetry Scripts
 ```bash
-git clone --recursive git@github.com:Bootstrap-Academy/auth-ms.git
+poe setup           # setup dependencies, .env file and pre-commit hook
+poe api             # start api locally
+poe test            # run unit tests
+poe pre-commit      # run pre-commit checks
+  poe lint          # run linter
+    poe format      # run auto formatter
+      poe isort     # sort imports
+      poe black     # reformat code
+    poe ruff        # check code style
+    poe mypy        # check typing
+    poe flake8      # check code style
+  poe coverage      # run unit tests with coverage
+poe alembic         # use alembic to manage database migrations
+poe migrate         # run database migrations
+poe env             # show settings from .env file
+poe jwt             # generate a jwt with the given payload and ttl in seconds
+poe hash-password   # hash a given password using argon2
 ```
 
-#### HTTPS
-```bash
-git clone --recursive https://github.com/Bootstrap-Academy/auth-ms.git
-```
-
-### Setup development environment
-
-After cloning the repository, you can setup the development environment by running the following command:
-
-```bash
-poe setup
-```
-
-This will create a virtual environment, install the dependencies, create a `.env` file and install the pre-commit hook.
-
-### PyCharm configuration
-
+## PyCharm configuration
 Configure the Python interpreter:
 
 - Open PyCharm and go to `Settings` ➔ `Project` ➔ `Python Interpreter`
@@ -58,32 +69,3 @@ Setup the run configuration:
 - Change the working directory to root path  ➔ `Edit Configurations`  ➔ `Working directory`
 - In the `EnvFile` tab add your `.env` file
 - Confirm with `OK`
-
-### Run the API
-
-To run the api for development you can use the `api` task:
-
-```bash
-poe api
-```
-
-### Poetry Scripts
-
-```bash
-poe setup           # setup dependencies, .env file and pre-commit hook
-poe api             # start api locally
-poe test            # run unit tests
-poe pre-commit      # run pre-commit checks
-  poe lint          # run linter
-    poe format      # run auto formatter
-      poe isort     # sort imports
-      poe black     # reformat code
-    poe mypy        # check typing
-    poe flake8      # check code style
-  poe coverage      # run unit tests with coverage
-poe alembic         # use alembic to manage database migrations
-poe migrate         # run database migrations
-poe env             # show settings from .env file
-poe jwt             # generate a jwt with the given payload and ttl in seconds
-poe hash-password   # hash a given password using argon2
-```
