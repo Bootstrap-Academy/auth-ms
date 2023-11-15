@@ -5,7 +5,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Body, Query, Request, FileResponse, UploadFile
+from fastapi import APIRouter, Body, Query, Request, UploadFile
+from fastapi.responses import FileResponse
 from pyotp import random_base32
 from sqlalchemy import asc, func, or_
 
