@@ -122,10 +122,12 @@ class AvatarNotFoundError(APIException):
     detail = "No avatar found"
     description = "No avatar found for this user"
 
+
 class InvalidAvatarTypeError(APIException):
     status_code = status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
     detail = "Unsupported media type"
     description = "This media type isn't supported for avatars"
+
 
 class AvatarSizeTooLarge(APIException):
     status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE

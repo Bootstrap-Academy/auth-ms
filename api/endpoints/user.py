@@ -17,9 +17,12 @@ from ..database import db, filter_by, select
 from ..exceptions.auth import PermissionDeniedError, admin_responses, user_responses
 from ..exceptions.oauth import InvalidOAuthTokenError, RemoteAlreadyLinkedError
 from ..exceptions.user import (
+    AvatarNotFoundError,
+    AvatarSizeTooLarge,
     CannotDeleteLastLoginMethodError,
     EmailAlreadyExistsError,
     EmailAlreadyVerifiedError,
+    InvalidAvatarTypeError,
     InvalidCodeError,
     InvalidEmailError,
     InvalidVatIdError,
@@ -35,9 +38,6 @@ from ..exceptions.user import (
     RegistrationDisabledError,
     UserAlreadyExistsError,
     UserNotFoundError,
-    AvatarNotFoundError,
-    InvalidAvatarTypeError,
-    AvatarSizeTooLarge
 )
 from ..redis import redis
 from ..schemas.session import LoginResponse
@@ -60,21 +60,21 @@ from ..utils.recaptcha import check_recaptcha, recaptcha_enabled
 from ..utils.utc import utcnow
 from api.utils.vat import check_vat_id
 
+
 router = APIRouter()
 
 
 @router.get("/users", dependencies=[admin_auth], responses=admin_responses(UsersResponse))
 async def get_users(
-        limit: int = Query(100, ge=1, le=100, description="The maximum number of users to return"),
-        offset: int = Query(0, ge=0, description="The number of users to skip for pagination"),
-        name: str | None = Query(None, max_length=256, description="A search term to match against the user's name"),
-        email: str | None = Query(None, max_length=256, description="A search term to match against the user's email"),
-        enabled: bool | None = Query(None, description="Return only users with the given enabled status"),
-        admin: bool | None = Query(None, description="Return only users with the given admin status"),
-        mfa_enabled: bool | None = Query(None, description="Return only users with the given MFA status"),
-        email_verified: bool | None = Query(None,
-                                            description="Return only users with the given email verification status"),
-        newsletter: bool | None = Query(None, description="Return only users with the given newsletter sub status"),
+    limit: int = Query(100, ge=1, le=100, description="The maximum number of users to return"),
+    offset: int = Query(0, ge=0, description="The number of users to skip for pagination"),
+    name: str | None = Query(None, max_length=256, description="A search term to match against the user's name"),
+    email: str | None = Query(None, max_length=256, description="A search term to match against the user's email"),
+    enabled: bool | None = Query(None, description="Return only users with the given enabled status"),
+    admin: bool | None = Query(None, description="Return only users with the given admin status"),
+    mfa_enabled: bool | None = Query(None, description="Return only users with the given MFA status"),
+    email_verified: bool | None = Query(None, description="Return only users with the given email verification status"),
+    newsletter: bool | None = Query(None, description="Return only users with the given newsletter sub status"),
 ) -> Any:
     """
     Return a list of all users matching the given criteria.
@@ -188,7 +188,7 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
         await redis.delete(key1, key2, key3)
 
         if await db.exists(
-                filter_by(models.OAuthUserConnection, provider_id=provider_id, remote_user_id=remote_user_id)
+            filter_by(models.OAuthUserConnection, provider_id=provider_id, remote_user_id=remote_user_id)
         ):
             raise RemoteAlreadyLinkedError
 
@@ -221,10 +221,10 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
     ),
 )
 async def update_user(
-        data: UpdateUser,
-        user: models.User = get_user(models.User.sessions, models.User.oauth_connections, require_self_or_admin=True),
-        admin: bool = is_admin,
-        session: models.Session = user_auth,
+    data: UpdateUser,
+    user: models.User = get_user(models.User.sessions, models.User.oauth_connections, require_self_or_admin=True),
+    admin: bool = is_admin,
+    session: models.Session = user_auth,
 ) -> Any:
     """
     Update an existing user.
@@ -378,7 +378,7 @@ async def request_verification_email(user: models.User = get_user(require_self_o
 
 @router.put("/users/me/email", responses=admin_responses(bool, InvalidVerificationCodeError))
 async def verify_email(
-        code: str = Body(embed=True, regex=VERIFICATION_CODE_REGEX, description="The code from the verification email")
+    code: str = Body(embed=True, regex=VERIFICATION_CODE_REGEX, description="The code from the verification email")
 ) -> Any:
     """
     Verify a user's email address.
@@ -402,8 +402,8 @@ async def verify_email(
     responses=admin_responses(User, UserNotFoundError, InvalidVerificationCodeError, NewsletterAlreadySubscribedError),
 )
 async def verify_newsletter_subscription(
-        code: str = Body(embed=True, regex=VERIFICATION_CODE_REGEX, description="The code from the verification email"),
-        user: models.User = get_user(models.User.sessions, require_self_or_admin=True),
+    code: str = Body(embed=True, regex=VERIFICATION_CODE_REGEX, description="The code from the verification email"),
+    user: models.User = get_user(models.User.sessions, require_self_or_admin=True),
 ) -> Any:
     """
     Verify a user's newsletter subscription.
@@ -446,9 +446,8 @@ async def initialize_mfa(user: models.User = get_user(require_self_or_admin=True
     responses=admin_responses(str, UserNotFoundError, MFAAlreadyEnabledError, MFANotInitializedError, InvalidCodeError),
 )
 async def enable_mfa(
-        code: str = Body(embed=True, regex=MFA_CODE_REGEX,
-                         description="The 6-digit code generated by the user's MFA app"),
-        user: models.User = get_user(require_self_or_admin=True),
+    code: str = Body(embed=True, regex=MFA_CODE_REGEX, description="The 6-digit code generated by the user's MFA app"),
+    user: models.User = get_user(require_self_or_admin=True),
 ) -> Any:
     """
     Enable MFA for a user and generate the recovery code.
@@ -495,7 +494,7 @@ async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)) 
 
 @router.delete("/users/{user_id}", responses=admin_responses(bool, UserNotFoundError))
 async def delete_user(
-        user: models.User = get_user(models.User.sessions, require_self_or_admin=True), admin: bool = is_admin
+    user: models.User = get_user(models.User.sessions, require_self_or_admin=True), admin: bool = is_admin
 ) -> Any:
     """
     Delete a user.
@@ -519,11 +518,11 @@ async def delete_user(
 @router.get("/users/{user_id}/avatar", responses=user_responses(FileResponse, UserNotFoundError, AvatarNotFoundError))
 async def get_user_avatar(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """
-        Get the user's avatar.
+    Get the user's avatar.
 
-        This endpoint retrieves and returns the user's avatar as an image.
+    This endpoint retrieves and returns the user's avatar as an image.
 
-        *Requirements:* **SELF** or **ADMIN**
+    *Requirements:* **SELF** or **ADMIN**
     """
 
     for ext in [".png", ".jpg"]:
@@ -533,14 +532,15 @@ async def get_user_avatar(user: models.User = get_user(require_self_or_admin=Tru
         raise AvatarNotFoundError
 
 
-@router.post("/users/{user_id}/avatar",
-             responses=user_responses(bool, UserNotFoundError, InvalidAvatarTypeError, AvatarSizeTooLarge,
-                                      AvatarNotFoundError))
+@router.post(
+    "/users/{user_id}/avatar",
+    responses=user_responses(bool, UserNotFoundError, InvalidAvatarTypeError, AvatarSizeTooLarge, AvatarNotFoundError),
+)
 async def upload_user_avatar(avatar_file: UploadFile, user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """
-        Uploads the user's image as avatar
+    Uploads the user's image as avatar
 
-        *Requirements:* **SELF** or **ADMIN**
+    *Requirements:* **SELF** or **ADMIN**
     """
 
     if not avatar_file:
@@ -576,10 +576,10 @@ async def upload_user_avatar(avatar_file: UploadFile, user: models.User = get_us
 @router.delete("/users/{user_id}/avatar", responses=user_responses(bool, UserNotFoundError))
 async def delete_avatar(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """
-            Deletes the user's avatar image
+    Deletes the user's avatar image
 
-            *Requirements:* **SELF** or **ADMIN**
-     """
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     for ext in [".png", ".jpg"]:
         potential_avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
