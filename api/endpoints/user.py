@@ -2,12 +2,12 @@
 
 import hashlib
 import os
+from base64 import b64encode
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Body, Query, Request, UploadFile
-from fastapi.responses import FileResponse
 from pyotp import random_base32
 from sqlalchemy import asc, func, or_
 
@@ -515,7 +515,7 @@ async def delete_user(
     return True
 
 
-@router.get("/users/{user_id}/avatar", responses=user_responses(FileResponse, UserNotFoundError, AvatarNotFoundError))
+@router.get("/users/{user_id}/avatar", responses=user_responses(str, UserNotFoundError, AvatarNotFoundError))
 async def get_user_avatar(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """
     Get the user's avatar.
@@ -526,8 +526,10 @@ async def get_user_avatar(user: models.User = get_user(require_self_or_admin=Tru
     """
 
     for ext in [".png", ".jpg"]:
-        if Path(f"{settings.avatar_path}/{user.id}{ext}").is_file():
-            return FileResponse(Path(f"{settings.avatar_path}/{user.id}{ext}"), media_type=f"image/{ext[1:]}")
+        avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
+        if avatar_path.is_file():
+            with open(avatar_path, "rb") as file:
+                return b64encode(file)
     else:
         raise AvatarNotFoundError
 
@@ -556,14 +558,15 @@ async def upload_user_avatar(avatar_file: UploadFile, user: models.User = get_us
     if ext not in allowed_extensions:
         return InvalidAvatarTypeError
 
-    if await avatar_file.read() > settings.avatar_max_size:
+    avatar_content = await avatar_file.read()
+    if len(avatar_content) > settings.avatar_max_size:
         return AvatarSizeTooLarge
 
     # Save the uploaded avatar file
     avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
 
     with avatar_path.open("wb") as avatar_file_dst:
-        avatar_file_dst.write(avatar_file.file.read())
+        avatar_file_dst.write(avatar_content)
 
     # Check if user already had a saved avatar
     for ext in [".png", ".jpg"]:
