@@ -529,7 +529,7 @@ async def get_user_avatar(user: models.User = get_user(require_self_or_admin=Tru
         avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
         if avatar_path.is_file():
             with open(avatar_path, "rb") as file:
-                return b64encode(file)
+                return b64encode(file.read())
     else:
         raise AvatarNotFoundError
 
