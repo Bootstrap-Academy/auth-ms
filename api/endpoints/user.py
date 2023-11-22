@@ -1,13 +1,11 @@
 """Endpoints for user management"""
 
 import hashlib
-import os
-from base64 import b64encode
+from base64 import b64decode, b64encode
 from datetime import timedelta
-from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Body, Query, Request, UploadFile
+from fastapi import APIRouter, Body, Query, Request
 from pyotp import random_base32
 from sqlalchemy import asc, func, or_
 
@@ -520,59 +518,37 @@ async def get_user_avatar(user: models.User = get_user(require_self_or_admin=Tru
     """
     Get the user's avatar.
 
-    This endpoint retrieves and returns the user's avatar as an image.
+    This endpoint retrieves and returns the user's avatar as base64 str.
 
     *Requirements:* **SELF** or **ADMIN**
     """
+    avatar: models.Avatar | None = await models.Avatar.get_by_id(user_id=user.id)
 
-    for ext in [".png", ".jpg"]:
-        avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
-        if avatar_path.is_file():
-            with open(avatar_path, "rb") as file:
-                return b64encode(file.read())
-    else:
+    if not avatar:
         raise AvatarNotFoundError
+
+    return b64encode(avatar.content)
 
 
 @router.post(
     "/users/{user_id}/avatar",
-    responses=user_responses(bool, UserNotFoundError, InvalidAvatarTypeError, AvatarSizeTooLarge, AvatarNotFoundError),
+    responses=user_responses(bool, UserNotFoundError, AvatarSizeTooLarge, InvalidAvatarTypeError),
 )
-async def upload_user_avatar(avatar_file: UploadFile, user: models.User = get_user(require_self_or_admin=True)) -> Any:
+async def upload_user_avatar(avatar_b64: str, user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """
     Uploads the user's image as avatar
 
     *Requirements:* **SELF** or **ADMIN**
     """
 
-    if not avatar_file:
-        return AvatarNotFoundError
+    if not avatar_b64:
+        raise InvalidAvatarTypeError
 
-    # Check file for size and extension
-    allowed_extensions = [".png", ".jpg"]
+    content = b64decode(avatar_b64)
+    if len(content) > settings.avatar_max_size:
+        raise AvatarSizeTooLarge
 
-    ext = os.path.splitext(avatar_file.filename)[-1]
-    if not ext:
-        return InvalidAvatarTypeError
-
-    if ext not in allowed_extensions:
-        return InvalidAvatarTypeError
-
-    avatar_content = await avatar_file.read()
-    if len(avatar_content) > settings.avatar_max_size:
-        return AvatarSizeTooLarge
-
-    # Save the uploaded avatar file
-    avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
-
-    with avatar_path.open("wb") as avatar_file_dst:
-        avatar_file_dst.write(avatar_content)
-
-    # Check if user already had a saved avatar
-    for ext in [".png", ".jpg"]:
-        potential_avatar_path = Path(f"avatars/{user.id}{ext}")
-        if potential_avatar_path.is_file() and potential_avatar_path != avatar_path:
-            potential_avatar_path.unlink()
+    await models.Avatar.create(user_id=user.id, content=content)
     return True
 
 
@@ -584,11 +560,7 @@ async def delete_avatar(user: models.User = get_user(require_self_or_admin=True)
     *Requirements:* **SELF** or **ADMIN**
     """
 
-    for ext in [".png", ".jpg"]:
-        potential_avatar_path = Path(f"{settings.avatar_path}/{user.id}{ext}")
-        if potential_avatar_path.is_file():
-            potential_avatar_path.unlink()
-    return True
+    await models.Avatar.delete(user_id=user.id)
 
 
 @router.post("/password_reset", responses=responses(bool, RecaptchaError, InvalidEmailError))
