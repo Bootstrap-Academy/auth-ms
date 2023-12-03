@@ -42,13 +42,13 @@ from ..schemas.session import LoginResponse
 from ..schemas.user import (
     MFA_CODE_REGEX,
     VERIFICATION_CODE_REGEX,
+    AvatarB64,
     CreateUser,
     RequestPasswordReset,
     ResetPassword,
     UpdateUser,
     User,
     UsersResponse,
-    AvatarB64
 )
 from ..services.shop import release_coins
 from ..settings import settings
