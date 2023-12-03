@@ -318,7 +318,9 @@ class Avatar(Base):
         return avatar
 
     @staticmethod
-    async def delete(user_id: str) -> None:
+    async def delete(user_id: str) -> bool:
         avatar = await Avatar.get_by_id(user_id=user_id)
-        await db.delete(avatar)
-        return
+        if avatar:
+            await db.delete(avatar)
+            return True
+        return False

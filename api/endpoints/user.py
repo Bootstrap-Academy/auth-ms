@@ -48,6 +48,7 @@ from ..schemas.user import (
     UpdateUser,
     User,
     UsersResponse,
+    AvatarB64
 )
 from ..services.shop import release_coins
 from ..settings import settings
@@ -534,17 +535,17 @@ async def get_user_avatar(user: models.User = get_user(require_self_or_admin=Tru
     "/users/{user_id}/avatar",
     responses=user_responses(bool, UserNotFoundError, AvatarSizeTooLarge, InvalidAvatarTypeError),
 )
-async def upload_user_avatar(avatar_b64: str, user: models.User = get_user(require_self_or_admin=True)) -> Any:
+async def upload_user_avatar(avatar_b64: AvatarB64, user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """
     Uploads the user's image as avatar
 
     *Requirements:* **SELF** or **ADMIN**
     """
 
-    if not avatar_b64:
+    if not avatar_b64.base64:
         raise InvalidAvatarTypeError
 
-    content = b64decode(avatar_b64)
+    content = b64decode(avatar_b64.base64)
     if len(content) > settings.avatar_max_size:
         raise AvatarSizeTooLarge
 
@@ -560,7 +561,7 @@ async def delete_avatar(user: models.User = get_user(require_self_or_admin=True)
     *Requirements:* **SELF** or **ADMIN**
     """
 
-    await models.Avatar.delete(user_id=user.id)
+    return await models.Avatar.delete(user_id=user.id)
 
 
 @router.post("/password_reset", responses=responses(bool, RecaptchaError, InvalidEmailError))
