@@ -14,10 +14,6 @@ RUN set -ex \
     && . .venv/bin/activate \
     && poetry install -n --no-root --without dev
 
-COPY api/version.py /build/
-COPY .git /build/.git/
-RUN python version.py
-
 
 FROM python:3.11-alpine
 
@@ -37,7 +33,6 @@ EXPOSE 8000
 COPY --from=builder /build/.venv/lib /usr/local/lib
 COPY alembic /app/alembic
 COPY alembic.ini /app/
-COPY --from=builder /build/VERSION /app/
 
 COPY templates /app/templates/
 COPY api /app/api/

@@ -29,7 +29,8 @@ def get_decorated_function(
 
 
 async def test__setup_app__sentry(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
-    get_version_mock = mocker.patch("api.app.get_version")
+    from api import __version__
+
     setup_sentry_mock = mocker.patch("api.app.setup_sentry")
     app_mock = mocker.patch("api.app.app")
     monkeypatch.setattr(settings, "sentry_dsn", sentry_dsn_mock := MagicMock())
@@ -37,8 +38,7 @@ async def test__setup_app__sentry(mocker: MockerFixture, monkeypatch: MonkeyPatc
 
     app.setup_app()
 
-    get_version_mock.assert_called_once_with()
-    setup_sentry_mock.assert_called_once_with(app_mock, sentry_dsn_mock, "auth-ms", get_version_mock().description)
+    setup_sentry_mock.assert_called_once_with(app_mock, sentry_dsn_mock, "auth-ms", __version__)
 
 
 async def test__setup_app__debug(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
