@@ -26,7 +26,7 @@ async def test__httpauth_constructor(mocker: MockerFixture) -> None:
 
     http_auth = auth.HTTPAuth()
 
-    httpbearer_patch.assert_called_once_with()
+    httpbearer_patch.assert_called_once_with(scheme="bearer")
     assert http_auth.model == httpbearer_patch()
     assert http_auth.scheme_name == http_auth.__class__.__name__
     assert issubclass(auth.HTTPAuth, SecurityBase)
