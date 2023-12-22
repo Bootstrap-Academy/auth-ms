@@ -4,6 +4,7 @@ import string
 from dataclasses import dataclass
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 from typing import Any
 
 import aiosmtplib
@@ -18,7 +19,7 @@ from ..settings import settings
 logger = get_logger(__name__)
 
 
-env = Environment(loader=FileSystemLoader("templates"), autoescape=True)
+env = Environment(loader=FileSystemLoader(Path(__file__).parent / "../../templates"), autoescape=True)
 
 
 @dataclass
