@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any
+from typing import Any, cast
 
 import jwt
 
@@ -15,12 +15,15 @@ def decode_jwt(
     token: str, *, require: list[str] | None = None, audience: list[str] | None = None
 ) -> dict[Any, Any] | None:
     try:
-        return jwt.decode(
-            token,
-            settings.jwt_secret,
-            ["HS256"],
-            audience=audience,
-            options={"require": [*{*(require or []), "exp"}], "verify_aud": bool(audience)},
+        return cast(
+            dict[Any, Any],
+            jwt.decode(
+                token,
+                settings.jwt_secret,
+                ["HS256"],
+                audience=audience,
+                options={"require": [*{*(require or []), "exp"}], "verify_aud": bool(audience)},
+            ),
         )
     except jwt.InvalidTokenError:
         return None
