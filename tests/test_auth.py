@@ -2,6 +2,7 @@ from typing import Type
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from fastapi.openapi.models import SecuritySchemeType
 from fastapi.security.base import SecurityBase
 from pytest_mock import MockerFixture
 
@@ -26,7 +27,7 @@ async def test__httpauth_constructor(mocker: MockerFixture) -> None:
 
     http_auth = auth.HTTPAuth()
 
-    httpbearer_patch.assert_called_once_with(scheme="bearer")
+    httpbearer_patch.assert_called_once_with(type=SecuritySchemeType.http, scheme="bearer")
     assert http_auth.model == httpbearer_patch()
     assert http_auth.scheme_name == http_auth.__class__.__name__
     assert issubclass(auth.HTTPAuth, SecurityBase)
