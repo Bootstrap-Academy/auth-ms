@@ -8,7 +8,6 @@ from pytest_mock import MockerFixture
 
 from ._utils import import_module, mock_asynccontextmanager
 from api import app
-from api.settings import settings
 
 
 def get_decorated_function(
@@ -26,32 +25,6 @@ def get_decorated_function(
     decorator.assert_called_once()
     assert len(functions) == 1
     return module, functions[0]
-
-
-async def test__setup_app__sentry(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
-    from api import __version__
-
-    setup_sentry_mock = mocker.patch("api.app.setup_sentry")
-    app_mock = mocker.patch("api.app.app")
-    monkeypatch.setattr(settings, "sentry_dsn", sentry_dsn_mock := MagicMock())
-    monkeypatch.setattr(settings, "debug", False)
-
-    app.setup_app()
-
-    setup_sentry_mock.assert_called_once_with(app_mock, sentry_dsn_mock, "auth-ms", __version__)
-
-
-async def test__setup_app__debug(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
-    app_mock = mocker.patch("api.app.app")
-    cors_middleware_mock = mocker.patch("api.app.CORSMiddleware")
-    monkeypatch.setattr(settings, "sentry_dsn", None)
-    monkeypatch.setattr(settings, "debug", True)
-
-    app.setup_app()
-
-    app_mock.add_middleware.assert_called_once_with(
-        cors_middleware_mock, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
-    )
 
 
 async def test__db_session(mocker: MockerFixture) -> None:
@@ -115,14 +88,12 @@ async def test__on_startup(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> N
 
     module, on_startup = get_decorated_function(fastapi_patch, "on_event", "startup")
     db_patch.create_tables = AsyncMock()
-    monkeypatch.setattr(module, "setup_app", MagicMock())
     clean_expired_sessions_loop = module.clean_expired_sessions_loop = MagicMock()
 
     module.db_context, [user_initialize_mock.side_effect], assert_calls = mock_asynccontextmanager(1, None)
 
     await on_startup()
 
-    module.setup_app.assert_called_once_with()
     db_patch.create_tables.assert_not_called()  # use alembic migrations instead
     clean_expired_sessions_loop.assert_called_once_with()
     create_task_mock.assert_called_once_with(clean_expired_sessions_loop())

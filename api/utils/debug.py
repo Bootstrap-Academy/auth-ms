@@ -45,7 +45,7 @@ async def check_responses(
         return response
 
     chunks = [chunk async for chunk in response.body_iterator]
-    body = b"".join(chunks)
+    body = b"".join(chunks)  # type: ignore
 
     response.body_iterator = iterate_in_threadpool(iter(chunks))
 
