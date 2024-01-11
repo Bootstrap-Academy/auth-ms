@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "auth-ms"
-version = "2.1.0"
+version = "2.1.1"
 description = ""
 authors = ["Defelo <defelo@the-morpheus.de>"]
 readme = "README.md"
