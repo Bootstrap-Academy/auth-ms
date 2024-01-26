@@ -34,7 +34,7 @@ redis = "^5.0.1"
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"
 isort = "^5.13.2"
-black = "^23.12.1"
+black = "^24.1.0"
 wemake-python-styleguide = "^0.18.0"
 mypy = "^1.8"
 SQLAlchemy = { extras = ["mypy"], version = "^1.4.42" }

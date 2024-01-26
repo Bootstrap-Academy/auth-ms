@@ -1,4 +1,5 @@
 """Endpoints for contact/support api"""
+
 from typing import Any
 
 from fastapi import APIRouter
