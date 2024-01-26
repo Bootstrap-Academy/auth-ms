@@ -15,8 +15,8 @@ def get_decorated_function(
 ) -> tuple[Any, Callable[..., Any]]:
     functions: list[Callable[..., Any]] = []
     decorator = MagicMock(side_effect=functions.append)
-    getattr(fastapi_patch(), decorator_name).side_effect = (
-        lambda *args, **kwargs: decorator if (args, kwargs) == (decorator_args, decorator_kwargs) else MagicMock()
+    getattr(fastapi_patch(), decorator_name).side_effect = lambda *args, **kwargs: (
+        decorator if (args, kwargs) == (decorator_args, decorator_kwargs) else MagicMock()
     )
     fastapi_patch.reset_mock()
 

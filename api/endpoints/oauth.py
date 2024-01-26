@@ -35,17 +35,20 @@ async def resolve_code(login: OAuthLogin) -> tuple[str, str | None]:
         raise ProviderNotFoundError
 
     provider = settings.oauth_providers[login.provider_id]
-    async with ClientSession() as session, session.post(
-        provider.token_url,
-        data={
-            "grant_type": "authorization_code",
-            "code": login.code,
-            "redirect_uri": login.redirect_uri,
-            "client_id": provider.client_id,
-        },
-        headers={"Accept": "application/json"},
-        auth=BasicAuth(provider.client_id, provider.client_secret),
-    ) as response:
+    async with (
+        ClientSession() as session,
+        session.post(
+            provider.token_url,
+            data={
+                "grant_type": "authorization_code",
+                "code": login.code,
+                "redirect_uri": login.redirect_uri,
+                "client_id": provider.client_id,
+            },
+            headers={"Accept": "application/json"},
+            auth=BasicAuth(provider.client_id, provider.client_secret),
+        ) as response,
+    ):
         if response.status != 200:
             raise InvalidOAuthCodeError
 
@@ -58,9 +61,12 @@ async def resolve_code(login: OAuthLogin) -> tuple[str, str | None]:
     def fmt(x: str) -> str:
         return x.format(access_token=access_token)
 
-    async with ClientSession() as session, session.get(
-        fmt(provider.userinfo_url), headers={k: fmt(v) for k, v in provider.userinfo_headers.items()}
-    ) as response:
+    async with (
+        ClientSession() as session,
+        session.get(
+            fmt(provider.userinfo_url), headers={k: fmt(v) for k, v in provider.userinfo_headers.items()}
+        ) as response,
+    ):
         if response.status != 200:
             raise InvalidOAuthCodeError
 
