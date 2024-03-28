@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, String, func, or_
+from sqlalchemy import Boolean, Column, LargeBinary, String, func, or_
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.sql import Select
 
@@ -296,3 +296,31 @@ class User(Base):
                 for key in ([self.name, self.email] if self.email else [self.name])
             ]
         )
+
+
+class Avatar(Base):
+    __tablename__ = "auth_avatar"
+
+    user_id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
+    content: Mapped[bytes] = Column(LargeBinary)
+
+    @staticmethod
+    async def get_by_id(user_id: str) -> Avatar | None:
+        q = select(Avatar).where(Avatar.user_id == user_id)
+        return await db.first(q)
+
+    @staticmethod
+    async def create(user_id: str, content: bytes) -> Avatar:
+        if await Avatar.get_by_id(user_id=user_id):
+            await Avatar.delete(user_id=user_id)
+        avatar = Avatar(user_id=user_id, content=content)
+        await db.add(avatar)
+        return avatar
+
+    @staticmethod
+    async def delete(user_id: str) -> bool:
+        avatar = await Avatar.get_by_id(user_id=user_id)
+        if avatar:
+            await db.delete(avatar)
+            return True
+        return False

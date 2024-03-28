@@ -98,6 +98,10 @@ class UpdateUser(BaseModel):
     vat_id: str | None = Field(max_length=64, description="Vat ID of the user")
 
 
+class AvatarB64(BaseModel):
+    base64: str
+
+
 class RequestPasswordReset(BaseModel):
     email: EmailStr = Field(description="The email address of the user to reset the password for")
     recaptcha_response: str | None = Field(description="Recaptcha response (required if enabled)")

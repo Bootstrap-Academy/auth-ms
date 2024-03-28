@@ -1,6 +1,7 @@
 """Endpoints for user management"""
 
 import hashlib
+from base64 import b64decode, b64encode
 from datetime import timedelta
 from typing import Any
 
@@ -14,9 +15,12 @@ from ..database import db, filter_by, select
 from ..exceptions.auth import PermissionDeniedError, admin_responses, user_responses
 from ..exceptions.oauth import InvalidOAuthTokenError, RemoteAlreadyLinkedError
 from ..exceptions.user import (
+    AvatarNotFoundError,
+    AvatarSizeTooLarge,
     CannotDeleteLastLoginMethodError,
     EmailAlreadyExistsError,
     EmailAlreadyVerifiedError,
+    InvalidAvatarTypeError,
     InvalidCodeError,
     InvalidEmailError,
     InvalidVatIdError,
@@ -38,6 +42,7 @@ from ..schemas.session import LoginResponse
 from ..schemas.user import (
     MFA_CODE_REGEX,
     VERIFICATION_CODE_REGEX,
+    AvatarB64,
     CreateUser,
     RequestPasswordReset,
     ResetPassword,
@@ -507,6 +512,56 @@ async def delete_user(
     await user.logout()
     await db.delete(user)
     return True
+
+
+@router.get("/users/{user_id}/avatar", responses=user_responses(str, UserNotFoundError, AvatarNotFoundError))
+async def get_user_avatar(user: models.User = get_user(require_self_or_admin=True)) -> Any:
+    """
+    Get the user's avatar.
+
+    This endpoint retrieves and returns the user's avatar as base64 str.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
+    avatar: models.Avatar | None = await models.Avatar.get_by_id(user_id=user.id)
+
+    if not avatar:
+        raise AvatarNotFoundError
+
+    return b64encode(avatar.content)
+
+
+@router.post(
+    "/users/{user_id}/avatar",
+    responses=user_responses(bool, UserNotFoundError, AvatarSizeTooLarge, InvalidAvatarTypeError),
+)
+async def upload_user_avatar(avatar_b64: AvatarB64, user: models.User = get_user(require_self_or_admin=True)) -> Any:
+    """
+    Uploads the user's image as avatar
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
+
+    if not avatar_b64.base64:
+        raise InvalidAvatarTypeError
+
+    content = b64decode(avatar_b64.base64)
+    if len(content) > settings.avatar_max_size:
+        raise AvatarSizeTooLarge
+
+    await models.Avatar.create(user_id=user.id, content=content)
+    return True
+
+
+@router.delete("/users/{user_id}/avatar", responses=user_responses(bool, UserNotFoundError))
+async def delete_avatar(user: models.User = get_user(require_self_or_admin=True)) -> Any:
+    """
+    Deletes the user's avatar image
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
+
+    return await models.Avatar.delete(user_id=user.id)
 
 
 @router.post("/password_reset", responses=responses(bool, RecaptchaError, InvalidEmailError))

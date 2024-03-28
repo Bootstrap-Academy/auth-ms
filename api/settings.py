@@ -100,6 +100,9 @@ class Settings(BaseSettings):
 
     oauth_providers: dict[str, OAuthProvider] = {}
 
+    avatar_path = "/avatars"
+    avatar_max_size = 5 * 1024 * 1024
+
     class Config:
         env_nested_delimiter = "__"
 
